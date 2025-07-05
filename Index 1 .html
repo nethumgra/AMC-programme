@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+        :root { --primary-color: #3498db; --primary-hover: #2980b9; --background-color: #f4f7f6; --form-background: #ffffff; --text-color: #333; --border-color: #ddd; --success-color: #2ecc71; --error-color: #e74c3c; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; background-color: var(--background-color); color: var(--text-color); }
+        .container { max-width: 1200px; margin: 20px auto; padding: 20px; }
+        .login-container { max-width: 400px; margin: 100px auto; padding: 40px; background-color: var(--form-background); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h1, h2, h3 { text-align: center; font-weight: 600; margin-bottom: 20px; }
+        .input-group { margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 14px; box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; font-family: 'Poppins', sans-serif; }
+        textarea { resize: vertical; min-height: 80px; }
+        input:focus, textarea:focus { outline: none; border-color: var(--primary-color); }
+        button { width: 100%; padding: 14px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 500; }
+        button:hover { background-color: var(--primary-hover); }
+        .message { text-align: center; min-height: 20px; font-weight: 500; margin-top: 15px; }
+        .error-message { color: var(--error-color); }
+        .success-message { color: var(--success-color); }
+        #admin-dashboard-view { display: none; }
+        .dashboard-section { background-color: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid var(--border-color); padding: 12px; text-align: left; word-break: break-all; }
+        th { background-color: #ecf0f1; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .logout-button { background-color: var(--error-color); width: auto; padding: 10px 20px; }
+        .logout-button:hover { background-color: #c0392b; }
+        .delete-btn { padding: 5px 10px; font-size: 12px; background-color: var(--error-color); cursor: pointer; border: none; color: white; border-radius: 5px; }
+        .delete-btn:hover { background-color: #c0392b; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="admin-login-view">
+            <div class="login-container">
+                <h2>Admin Panel Login</h2>
+                <form id="adminLoginForm">
+                    <div class="input-group"><input type="text" id="adminUsername" placeholder="Username" required></div>
+                    <div class="input-group"><input type="password" id="adminPassword" placeholder="Password" required></div>
+                    <button type="submit">Login</button>
+                    <p id="loginError" class="message error-message"></p>
+                </form>
+            </div>
+        </div>
+
+        <div id="admin-dashboard-view">
+            <div class="header">
+                <h1>Admin Dashboard</h1>
+                <button id="adminLogoutBtn" class="logout-button">Logout</button>
+            </div>
+            
+            <div class="dashboard-section">
+                <h3>Add New Video</h3>
+                <form id="addVideoForm">
+                    <div class="input-group"><input type="text" id="videoUrl" placeholder="YouTube URL or Video ID" required></div>
+                    <div class="input-group"><input type="text" id="videoTitle" placeholder="Video Title" required></div>
+                    <div class="input-group"><textarea id="videoDescription" placeholder="Video Description (Optional)"></textarea></div>
+                    <button type="submit">Add Video</button>
+                    <p id="addVideoMessage" class="message"></p>
+                </form>
+            </div>
+
+            <div class="dashboard-section">
+                <h3>Manage Videos</h3>
+                <table>
+                    <thead><tr><th>Video Title</th><th>Video ID</th><th>Actions</th></tr></thead>
+                    <tbody id="video-table-body"></tbody>
+                </table>
+            </div>
+
+            <div class="dashboard-section">
+                <h3>Registered Users</h3>
+                <p>Total users registered: <strong id="userCount">0</strong></p>
+                <table>
+                    <thead><tr><th>Username</th><th>Email</th><th>Mobile</th><th>Last Login</th><th>Actions</th></tr></thead>
+                    <tbody id="user-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, orderBy, addDoc, serverTimestamp, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyASA8KptfOy9pezf3QCoWHt9Bg28yN3HsM",
+            authDomain: "amce-5d785.firebaseapp.com",
+            projectId: "amce-5d785",
+            storageBucket: "amce-5d785.firebasestorage.app",
+            messagingSenderId: "877483628426",
+            appId: "1:877483628426:web:dfd8961b06c35e6cc95a73"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- Element selectors ---
+        const loginView = document.getElementById('admin-login-view');
+        const dashboardView = document.getElementById('admin-dashboard-view');
+        const adminLoginForm = document.getElementById('adminLoginForm');
+        const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+        const userTableBody = document.getElementById('user-table-body');
+        const userCountEl = document.getElementById('userCount');
+        const addVideoForm = document.getElementById('addVideoForm');
+        const videoTableBody = document.getElementById('video-table-body');
+
+        // --- Authentication ---
+        adminLoginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const user = document.getElementById('adminUsername').value;
+            const pass = document.getElementById('adminPassword').value;
+            // ⚠️ IMPORTANT: Change this password before production use!
+            if (user === 'admin' && pass === 'admin123') {
+                sessionStorage.setItem('isAdminLoggedIn', 'true');
+                showDashboard();
+            } else {
+                document.getElementById('loginError').textContent = 'Invalid username or password.';
+            }
+        });
+
+        adminLogoutBtn.addEventListener('click', () => {
+            sessionStorage.removeItem('isAdminLoggedIn');
+            showLogin();
+        });
+        
+        function showDashboard() {
+            loginView.style.display = 'none';
+            dashboardView.style.display = 'block';
+            loadUsers();
+            loadVideos();
+        }
+
+        function showLogin() {
+            loginView.style.display = 'block';
+            dashboardView.style.display = 'none';
+        }
+
+        // --- User Data Logic ---
+        async function loadUsers() {
+            userTableBody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+            const usersCollection = collection(db, 'users');
+            const userSnapshot = await getDocs(usersCollection);
+            
+            userTableBody.innerHTML = '';
+            userCountEl.textContent = userSnapshot.size;
+
+            if(userSnapshot.empty) {
+                userTableBody.innerHTML = '<tr><td colspan="5">No users found.</td></tr>';
+                return;
+            }
+
+            userSnapshot.forEach(doc => {
+                const userData = doc.data();
+                const tr = document.createElement('tr');
+                let lastLoginDate = 'Never';
+                if (userData.lastLogin && userData.lastLogin.toDate) {
+                    lastLoginDate = userData.lastLogin.toDate().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+                }
+                tr.innerHTML = `
+                    <td>${userData.username || 'N/A'}</td>
+                    <td>${userData.email || 'N/A'}</td>
+                    <td>${userData.mobile || 'N/A'}</td>
+                    <td>${lastLoginDate}</td>
+                    <td><button class="delete-btn delete-user-btn" data-uid="${doc.id}">Delete Data</button></td>
+                `;
+                userTableBody.appendChild(tr);
+            });
+        }
+
+        // --- Video Logic ---
+        function extractVideoId(url) {
+            let videoId = null;
+            try {
+                const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+                const match = url.match(regex);
+                if (match && match[1]) videoId = match[1];
+                else if (url.trim().length === 11) videoId = url.trim();
+            } catch (error) {
+                if (url.trim().length === 11) videoId = url.trim();
+            }
+            return videoId;
+        }
+
+        addVideoForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const urlOrId = document.getElementById('videoUrl').value;
+            const title = document.getElementById('videoTitle').value.trim();
+            const description = document.getElementById('videoDescription').value.trim();
+            const messageEl = document.getElementById('addVideoMessage');
+            const videoId = extractVideoId(urlOrId);
+
+            if (!videoId) { messageEl.textContent = 'Invalid YouTube URL or Video ID.'; messageEl.className = 'message error-message'; return; }
+            if (!title) { messageEl.textContent = 'Video Title is required.'; messageEl.className = 'message error-message'; return; }
+            
+            messageEl.textContent = 'Adding video...';
+            messageEl.className = 'message';
+
+            try {
+                await addDoc(collection(db, "videos"), { id: videoId, title, description, createdAt: serverTimestamp() });
+                messageEl.textContent = 'Video added successfully!';
+                messageEl.className = 'message success-message';
+                addVideoForm.reset();
+                setTimeout(() => messageEl.textContent = '', 3000);
+                loadVideos();
+            } catch (error) {
+                messageEl.textContent = `Error adding video: ${error.message}`;
+                messageEl.className = 'message error-message';
+            }
+        });
+
+        async function loadVideos() {
+            videoTableBody.innerHTML = '<tr><td colspan="3">Loading videos...</td></tr>';
+            const q = query(collection(db, 'videos'), orderBy('createdAt', 'desc'));
+            const videoSnapshot = await getDocs(q);
+            videoTableBody.innerHTML = '';
+            if (videoSnapshot.empty) {
+                videoTableBody.innerHTML = '<tr><td colspan="3">No videos found.</td></tr>';
+                return;
+            }
+            videoSnapshot.forEach(doc => {
+                const videoData = doc.data();
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${videoData.title}</td>
+                    <td>${videoData.id}</td>
+                    <td><button class="delete-btn delete-video-btn" data-id="${doc.id}">Delete</button></td>
+                `;
+                videoTableBody.appendChild(tr);
+            });
+        }
+
+        // --- Event Delegation for Delete Buttons ---
+        dashboardView.addEventListener('click', async (e) => {
+            const target = e.target;
+            if (target.classList.contains('delete-btn')) {
+                // Delete Video
+                if (target.classList.contains('delete-video-btn')) {
+                    const docId = target.dataset.id;
+                    if (confirm('Are you sure you want to delete this video?')) {
+                        try {
+                            await deleteDoc(doc(db, 'videos', docId));
+                            loadVideos();
+                        } catch (error) {
+                            alert("Error deleting video.");
+                            console.error(error);
+                        }
+                    }
+                }
+                // Delete User Data
+                if (target.classList.contains('delete-user-btn')) {
+                    const uid = target.dataset.uid;
+                    if (confirm('Are you sure you want to delete this user\'s DATA?\n\nIMPORTANT: This only removes data from this list. It does NOT remove their login account from Firebase Authentication.')) {
+                        try {
+                            await deleteDoc(doc(db, 'users', uid));
+                            loadUsers();
+                        } catch (error) {
+                            alert("Error deleting user data.");
+                            console.error(error);
+                        }
+                    }
+                }
+            }
+        });
+
+        // --- Initial Check on Page Load ---
+        if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+            showDashboard();
+        } else {
+            showLogin();
+        }
+    </script>
+</body>
+</html>
