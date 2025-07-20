@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Materials</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        :root { --primary-color: #4CAF50; --primary-hover: #45a049; --background-color: #f0f2f5; --form-background: #ffffff; --text-color: #333; --border-color: #ddd; --error-color: #e74c3c; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; padding: 20px; background-color: var(--background-color); }
+        .main-container { max-width: 900px; margin: 20px auto; background-color: var(--form-background); padding: 20px 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); }
+        .page-header h3 { margin: 0; font-size: 1.5em; }
+        .header-buttons { display: flex; gap: 15px; }
+        .header-buttons a, .header-buttons button { width: auto; padding: 8px 15px; font-size: 14px; text-decoration: none; border-radius: 6px; color: white; border: none; cursor: pointer; }
+        .back-button { background-color: var(--primary-color); }
+        .logout-button { background-color: var(--error-color); }
+        
+        .search-container { margin-bottom: 20px; }
+        #pdfSearch { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        #pdfSearch:focus { outline: none; border-color: var(--primary-color); }
+
+        #pdf-list { list-style-type: none; padding: 0; margin: 0; }
+        #pdf-list li { background-color: #fff; padding: 15px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 10px; transition: background-color 0.3s ease; cursor: pointer; display: flex; align-items: center; font-weight: 500;}
+        #pdf-list li:hover { background-color: #f0f0f0; }
+        #pdf-list li i { margin-right: 12px; font-size: 1.2em; color: var(--primary-color); }
+        
+        .list-loader-container { display: flex; justify-content: center; align-items: center; padding: 40px; color: #888; gap: 15px; font-size: 1.1em; }
+        .loader { border: 4px solid #f3f3f3; border-radius: 50%; border-top: 4px solid var(--primary-color); width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #pdf-viewer-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 20px;}
+        #pdf-viewer-header { width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; box-sizing: border-box; }
+        #pdf-viewer-title { color: white; font-weight: 600; font-size: 1.1em; }
+        #page-render-status { color: #ccc; font-size: 0.9em; }
+        #pdf-viewer-close { font-size: 30px; color: white; cursor: pointer; background: transparent; border: none; }
+        #pdf-viewer-content { width: 100%; height: calc(100% - 80px); overflow: auto; text-align: center; }
+        .pdf-page-canvas { margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        
+        @keyframes pan-grid { 0% { transform: translate(0, 0); } 50% { transform: translate(-40px, -20px); } 100% { transform: translate(0, 0); } }
+        .full-coverage-watermark { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: center; overflow: hidden; animation: pan-grid 25s linear infinite; }
+        .watermark-item { color: rgba(0, 0, 0, 0.12); font-size: 16px; font-weight: 600; padding: 20px 40px; transform: rotate(-30deg); white-space: nowrap; text-shadow: 1px 1px 1px rgba(255,255,255,0.1); }
+        
+        .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 3000; display: flex; justify-content: center; align-items: center; }
+        .popup-content { background: white; padding: 30px 40px; border-radius: 12px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="main-container" id="pdfPageContainer">
+        <div class="page-header">
+            <h3>Course Materials</h3>
+            <div class="header-buttons">
+                <a href="index.html" class="back-button">Back to Videos</a>
+                <button class="logout-button">Logout</button>
+            </div>
+        </div>
+        <div class="search-container">
+            <input type="text" id="pdfSearch" placeholder="Search materials by title...">
+        </div>
+        <ul id="pdf-list">
+            <div class="list-loader-container">
+                <div class="loader"></div>
+                <span>Loading Materials...</span>
+            </div>
+        </ul>
+    </div>
+
+    <template id="pdfViewerTemplate">
+        <div id="pdf-viewer-modal">
+            <div id="pdf-viewer-header">
+                <span id="pdf-viewer-title"></span>
+                <span id="page-render-status"></span>
+                <button id="pdf-viewer-close">×</button>
+            </div>
+            <div id="pdf-viewer-content">
+                 <div id="pdf-watermark-container" style="position: relative; display: inline-block;">
+                    <div id="pdf-canvas-container"></div>
+                    <div id="pdf-watermark" class="full-coverage-watermark"></div>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <template id="loadingPopupTemplate">
+        <div class="popup-overlay">
+            <div class="popup-content">
+                <p style="margin:0; font-weight:500;"></p>
+            </div>
+        </div>
+    </template>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    // This URL is now correctly set with the one you provided.
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzv4pdvSb6CEQrnGZ6qBc_gZWledDBI1XZ9FsP2hYTUd6YQ4bBCmFDjT2WdtpaHFBDjw/exec";
+    
+    const firebaseConfig = {
+        apiKey: "AIzaSyASA8KptfOy9pezf3QCoWHt9Bg28yN3HsM",
+        authDomain: "amce-5d785.firebaseapp.com",
+        projectId: "amce-5d785",
+        storageBucket: "amce-5d785.appspot.com",
+        messagingSenderId: "877483628426",
+        appId: "1:877483628426:web:dfd8961b06c35e6cc95a73"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+
+    onAuthStateChanged(auth, (user) => {
+        if (!user || !user.emailVerified) {
+            window.location.href = 'index.html';
+        }
+    });
+
+    document.querySelector('.logout-button').addEventListener('click', () => signOut(auth));
+
+    const pdfsQuery = query(collection(db, "pdfs"), orderBy("createdAt", "desc"));
+    onSnapshot(pdfsQuery, (snapshot) => {
+        const pdfListEl = document.getElementById('pdf-list');
+        pdfListEl.innerHTML = ''; 
+        if (snapshot.empty) {
+            pdfListEl.innerHTML = '<li>No materials available yet.</li>';
+            return;
+        }
+        snapshot.forEach((doc) => {
+            const pdf = doc.data();
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `<i class="fas fa-file-pdf"></i><span>${pdf.title}</span>`;
+            listItem.addEventListener('click', () => openPdfViewer(pdf.url, pdf.title, pdf.fileId));
+            pdfListEl.appendChild(listItem);
+        });
+    });
+
+    const searchInput = document.getElementById('pdfSearch');
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const pdfItems = document.querySelectorAll('#pdf-list li');
+        
+        pdfItems.forEach(item => {
+            const title = item.textContent.toLowerCase();
+            if (title.includes(searchTerm)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+
+    function showLoadingPopup(message) {
+        hideLoadingPopup();
+        const template = document.getElementById('loadingPopupTemplate').content.cloneNode(true);
+        template.querySelector('p').textContent = message;
+        document.body.appendChild(template);
+    }
+
+    function hideLoadingPopup() {
+        const popup = document.querySelector('.popup-overlay');
+        if (popup) popup.remove();
+    }
+    
+    async function populateWatermark(containerSelector) {
+        const watermarkContainer = document.querySelector(containerSelector);
+        if (!watermarkContainer || !auth.currentUser) return;
+        const userDocRef = doc(db, "users", auth.currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+            const { username, mobile } = userDocSnap.data();
+            const details = `${username} / ${auth.currentUser.email} / ${mobile}`;
+            let html = '';
+            for (let i = 0; i < 200; i++) html += `<span class="watermark-item">${details}</span>`;
+            watermarkContainer.innerHTML = html;
+        }
+    }
+
+    async function openPdfViewer(driveUrl, pdfTitle, fileIdFromDb) {
+        let fileId = fileIdFromDb;
+        if (!fileId) {
+            const regex = /id=([a-zA-Z0-9_-]+)/;
+            const match = driveUrl.match(regex);
+            if (!match || !match[1]) {
+                alert("Invalid PDF link. Cannot find File ID.");
+                return;
+            }
+            fileId = match[1];
+        }
+
+        showLoadingPopup("Please wait, preparing document...");
+
+        try {
+            const res = await fetch(`${SCRIPT_URL}?fileId=${fileId}`);
+            const data = await res.json();
+            if (data.status !== 'success') throw new Error(data.message);
+
+            hideLoadingPopup();
+            const pdfDataBinary = atob(data.data);
+            const template = document.getElementById('pdfViewerTemplate').content.cloneNode(true);
+            document.body.appendChild(template);
+            
+            document.getElementById('pdf-viewer-title').textContent = pdfTitle;
+            document.getElementById('pdf-viewer-close').addEventListener('click', () => document.getElementById('pdf-viewer-modal').remove());
+
+            await populateWatermark('#pdf-watermark');
+            
+            const pdfDoc = await pdfjsLib.getDocument({ data: pdfDataBinary }).promise;
+            
+            const canvasContainer = document.getElementById('pdf-canvas-container');
+            
+            await renderAndAppendPage(pdfDoc, 1, canvasContainer);
+            
+            renderRemainingPages(pdfDoc, canvasContainer);
+
+        } catch (err) {
+            hideLoadingPopup();
+            alert("Could not load PDF file: " + err.message);
+            console.error("PDF Load Error:", err);
+        }
+    }
+
+    async function renderAndAppendPage(pdfDoc, pageNum, container) {
+        const page = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1.8 });
+        const canvas = document.createElement('canvas');
+        canvas.className = 'pdf-page-canvas';
+        const ctx = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+        container.appendChild(canvas);
+    }
+    
+    async function renderRemainingPages(pdfDoc, container) {
+        const statusEl = document.getElementById('page-render-status');
+        for (let pageNum = 2; pageNum <= pdfDoc.numPages; pageNum++) {
+            if (statusEl) statusEl.textContent = `Loading page ${pageNum} of ${pdfDoc.numPages}...`;
+            await renderAndAppendPage(pdfDoc, pageNum, container);
+            await new Promise(resolve => setTimeout(resolve, 10)); 
+        }
+        if (statusEl) {
+            statusEl.textContent = "All pages loaded.";
+            setTimeout(() => { statusEl.textContent = ''; }, 2000);
+        }
+    }
+</script>
+
+</body>
+</html>
