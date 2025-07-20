@@ -129,8 +129,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, orderBy, addDoc, serverTimestamp, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, getDocs, query, orderBy, addDoc, serverTimestamp, deleteDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, sendPasswordResetEmail, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzv4pdvSb6CEQrnGZ6qBc_gZWledDBI1XZ9FsP2hYTUd6YQ4bBCmFDjT2WdtpaHFBDjw/exec";
         const firebaseConfig = {
@@ -159,16 +159,64 @@
         const pdfTableBody = document.getElementById('pdf-table-body');
 
         // --- Authentication Logic ---
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
-                loginView.classList.add('hidden');
-                dashboardView.classList.remove('hidden');
-                loadAllData();
+                // User ලොග් වෙලා නම්, ඒ user ඇඩ්මින් ද කියලා බලමු
+                const userDocRef = doc(db, "users", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (userDocSnap.exists() && userDocSnap.data().isAdmin === true) {
+                    // User ඇඩ්මින් නම් විතරක් dashboard එක පෙන්වන්න
+                    loginView.classList.add('hidden');
+                    dashboardView.classList.remove('hidden');
+                    loadAllData();
+                    // Admin panel එක load වුණාට පස්සේ visibilitychange listener එක එකතු කරන්න
+                    addVisibilityChangeListener(); 
+                } else {
+                    // User ඇඩ්මින් නොවේ නම්, ලොග් අවුට් කර නැවත ලොගින් පේජ් එකට යවන්න
+                    await signOut(auth);
+                    loginView.classList.remove('hidden');
+                    dashboardView.classList.add('hidden');
+                    document.getElementById('loginError').textContent = "You are not authorized to access the admin panel.";
+                }
             } else {
+                // User ලොග් වෙලා නැත්නම් login view එක පෙන්වන්න
                 loginView.classList.remove('hidden');
                 dashboardView.classList.add('hidden');
             }
         });
+
+        // Function to add the visibility change listener
+        function addVisibilityChangeListener() {
+            document.removeEventListener('visibilitychange', handleVisibilityChange); // Remove existing listener to prevent duplicates
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+        }
+
+        // Function to handle visibility changes
+        function handleVisibilityChange() {
+            // If the document is hidden (user switched tabs or minimized browser)
+            if (document.hidden) {
+                const currentUser = auth.currentUser;
+                // Only if an admin user is currently logged in, log them out
+                if (currentUser) {
+                    // Check if the current user is an admin before logging out.
+                    // This is a safety measure to ensure only admins are affected.
+                    // A better way would be to get the isAdmin status from Firestore here again,
+                    // but for simplicity and immediate response, we rely on the current auth state.
+                    // For a robust solution, you might re-verify isAdmin from Firestore upon visibility change.
+                    getDoc(doc(db, "users", currentUser.uid)).then(docSnap => {
+                        if (docSnap.exists() && docSnap.data().isAdmin === true) {
+                            console.log("Admin tab is hidden, logging out admin...");
+                            signOut(auth);
+                        }
+                    }).catch(error => {
+                        console.error("Error checking admin status on visibility change:", error);
+                        // If there's an error, it's safer to log out.
+                        signOut(auth);
+                    });
+                }
+            }
+        }
 
         adminLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -177,9 +225,12 @@
             const errorEl = document.getElementById('loginError');
             errorEl.textContent = '';
             try {
+                // මෙතනදී persistence එක session විදිහට සෙට් කරන්න
+                await setPersistence(auth, browserSessionPersistence); 
                 await signInWithEmailAndPassword(auth, email, password);
+                // AuthStateChanged listener එකෙන් UI update කරයි
             } catch (error) {
-                errorEl.textContent = "Login failed. Please check credentials.";
+                errorEl.textContent = "Login failed. Please check credentials or ensure you are an authorized admin.";
             }
         });
 
