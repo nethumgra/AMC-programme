@@ -61,40 +61,6 @@
         #videoPlaylist li.active { background-color: var(--active-item-bg); border-left: 5px solid var(--primary-color); }
         .toast-message { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.75); color: white; padding: 12px 22px; border-radius: 25px; z-index: 6; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; }
         .toast-message.show { opacity: 1; }
-
-        /* === Fake Fullscreen Styles === */
-        .fake-fullscreen {
-            position: fixed !important;
-            top: 20px;
-            left: 20px;
-            width: calc(100vw - 40px) !important;
-            height: calc(100vh - 40px) !important;
-            max-width: none !important;
-            z-index: 1000;
-            padding-bottom: 0 !important;
-        }
-        #close-fullscreen-btn {
-            position: absolute;
-            top: 25px;
-            right: 25px;
-            background: rgba(0,0,0,0.5);
-            border: 2px solid white;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-            z-index: 1001;
-            display: none;
-            color: white;
-            font-size: 18px;
-            padding: 0;
-            line-height: 38px;
-            text-align: center;
-        }
-        .fake-fullscreen #close-fullscreen-btn {
-            display: block;
-        }
-
     </style>
 </head>
 <body>
@@ -156,7 +122,6 @@
             <div id="custom-controls">
                 <button id="play-pause-btn"><i class="fas fa-play"></i></button>
                 <button id="fullscreen-btn"><i class="fas fa-expand"></i></button>
-                <button id="close-fullscreen-btn">×</button>
                 <div id="progress-container"><div id="progress-bar"></div></div>
             </div>
             <div id="keyboard-disabled-toast" class="toast-message">Keyboard Disabled</div>
@@ -195,23 +160,14 @@
     let player;
     let progressInterval;
     let toastTimeout;
+    
     let activityTimer;
     const INACTIVITY_TIMEOUT = 30 * 1000; 
 
-    // === Logout Logic Functions ===
-    const handleWindowBlur = () => {
-        console.log("Window lost focus (blur event). Logging out.");
-        handleLogout();
-    };
+    // === Mouse එක Page එකෙන් එලියට යනවද බලන function එක ===
     const handleMouseLeavePage = () => {
         console.log("Mouse left the page viewport. Logging out.");
         handleLogout();
-    };
-    const handleEscKey = (e) => {
-        const videoWrapper = document.getElementById('video-wrapper');
-        if (e.key === 'Escape' && videoWrapper?.classList.contains('fake-fullscreen')) {
-            videoWrapper.classList.remove('fake-fullscreen');
-        }
     };
 
     function showPopup(title, message, onOk) {
@@ -228,9 +184,7 @@
 
     function handleLogout() {
         console.log("Cleaning up listeners on logout...");
-        window.removeEventListener('blur', handleWindowBlur);
         document.documentElement.removeEventListener('mouseleave', handleMouseLeavePage);
-        document.removeEventListener('keydown', handleEscKey);
         signOut(auth).catch(error => console.error("Logout error:", error));
     }
 
@@ -273,16 +227,12 @@
                 showView('login');
             }
             removeActivityListeners();
-            window.removeEventListener('blur', handleWindowBlur);
             document.documentElement.removeEventListener('mouseleave', handleMouseLeavePage);
-            document.removeEventListener('keydown', handleEscKey);
         }
     });
     
     async function showView(viewName) {
-        window.removeEventListener('blur', handleWindowBlur);
         document.documentElement.removeEventListener('mouseleave', handleMouseLeavePage);
-        document.removeEventListener('keydown', handleEscKey);
 
         mainContainer.innerHTML = '';
         const template = document.getElementById(viewName + 'Template').content.cloneNode(true);
@@ -291,10 +241,8 @@
         attachEventListeners(viewName);
 
         if (viewName === 'video') {
-            console.log("Video view loaded. All security features are active.");
-            window.addEventListener('blur', handleWindowBlur);
+            console.log("Video view loaded. Page leave detection is active immediately.");
             document.documentElement.addEventListener('mouseleave', handleMouseLeavePage);
-            document.addEventListener('keydown', handleEscKey);
 
             if (typeof YT !== 'undefined' && YT.Player) { onYouTubeIframeAPIReady(); }
             renderPlaylist(currentPlaylist);
@@ -326,20 +274,13 @@
         } else if (viewName === 'video') {
             const materialsButton = mainContainer.querySelector('.materials-button');
             materialsButton?.addEventListener('click', () => {
-                console.log("Materials link clicked. Disarming security for navigation.");
-                window.removeEventListener('blur', handleWindowBlur);
+                console.log("Materials link clicked. Disarming leave listener for navigation.");
                 document.documentElement.removeEventListener('mouseleave', handleMouseLeavePage);
-            });
-            
-            mainContainer.querySelector('#fullscreen-btn')?.addEventListener('click', () => {
-                document.getElementById('video-wrapper')?.classList.toggle('fake-fullscreen');
-            });
-            mainContainer.querySelector('#close-fullscreen-btn')?.addEventListener('click', () => {
-                document.getElementById('video-wrapper')?.classList.remove('fake-fullscreen');
             });
             
             mainContainer.querySelector('.logout-button').addEventListener('click', handleLogout);
             mainContainer.querySelector('#play-pause-btn')?.addEventListener('click', () => player?.getPlayerState() === YT.PlayerState.PLAYING ? player.pauseVideo() : player.playVideo());
+            mainContainer.querySelector('#fullscreen-btn')?.addEventListener('click', () => document.getElementById('video-wrapper')?.requestFullscreen());
             mainContainer.querySelector('#progress-container')?.addEventListener('click', (e) => {
                 if (!player || typeof player.getDuration !== 'function') return;
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -352,6 +293,9 @@
                     item.style.display = item.textContent.toLowerCase().includes(searchTerm) ? '' : 'none';
                 });
             });
+
+            // === Tab මාරු කරනකොට logout වෙන එක අයින් කලා ===
+            // document.addEventListener('visibilitychange', ...); <<--- THIS BLOCK IS REMOVED
         }
     }
 
