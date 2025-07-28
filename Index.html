@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Videos</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        :root { --primary-color: #4CAF50; --primary-hover: #45a049; --background-color: #f0f2f5; --form-background: #ffffff; --text-color: #333; --border-color: #ddd; --error-color: #e74c3c; --success-color: #2ecc71; --active-item-bg: #e8f5e9; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; padding: 20px; background-color: var(--background-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .main-container { width: 100%; max-width: 450px; background-color: var(--form-background); padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .video-view-container { max-width: 900px; padding: 20px 40px; }
+        h3, h4 { text-align: center; color: var(--text-color); margin-bottom: 25px; font-weight: 600; }
+        .input-group { position: relative; margin-bottom: 20px; }
+        input[type="text"], input[type="password"], input[type="email"], input[type="tel"] { width: 100%; padding: 14px; box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; }
+        input:focus { outline: none; border-color: var(--primary-color); }
+        .password-toggle { position: absolute; top: 50%; right: 15px; transform: translateY(-50%); cursor: pointer; color: #999; }
+        button { width: 100%; padding: 14px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 500; }
+        button:hover { background-color: var(--primary-hover); }
+        .message { text-align: center; margin-top: 15px; font-size: 14px; min-height: 20px; font-weight: 500;}
+        .error-message { color: var(--error-color); } .success-message { color: var(--success-color); }
+        .switch-form { text-align: center; margin-top: 20px; font-size: 14px; }
+        .switch-form a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
+        
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); }
+        .page-header h3 { margin: 0; font-size: 1.5em; text-align: left;}
+        .header-buttons { display: flex; gap: 15px; }
+        .header-buttons a, .header-buttons button { width: auto; padding: 8px 15px; font-size: 14px; text-decoration: none; border-radius: 6px; color: white; border: none; cursor: pointer; }
+        .logout-button { background-color: var(--error-color); }
+        .logout-button:hover { background-color: #c0392b; }
+        .materials-button { background-color: var(--primary-color); }
+        .materials-button:hover { background-color: var(--primary-hover); }
+
+        .video-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; background-color: #000; }
+        .video-wrapper #player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        .video-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
+        #custom-controls { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.3s ease; }
+        #play-pause-btn { background: rgba(0,0,0,0.5); border: 2px solid white; border-radius: 50%; width: 70px; height: 70px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        #play-pause-btn i { color: white; font-size: 24px; margin-left: 4px; }
+        #fullscreen-btn { position: absolute; bottom: 15px; right: 15px; background: transparent; border: none; width: auto; padding: 5px; }
+        #fullscreen-btn i { color: white; font-size: 20px; opacity: 0.8; }
+        #progress-container { position: absolute; bottom: 5px; left: 5%; width: 90%; height: 5px; background-color: rgba(255, 255, 255, 0.3); cursor: pointer; border-radius: 2.5px; }
+        #progress-bar { width: 0; height: 100%; background-color: var(--primary-color); border-radius: 2.5px; }
+
+        @keyframes pan-grid { 0% { transform: translate(0, 0); } 50% { transform: translate(-40px, -20px); } 100% { transform: translate(0, 0); } }
+        .full-coverage-watermark { position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; z-index: 3; pointer-events: none; display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: center; overflow: hidden; animation: pan-grid 25s linear infinite; }
+        .watermark-item { color: rgba(255, 255, 255, 0.08); font-size: 16px; font-weight: 600; padding: 20px 40px; transform: rotate(-30deg); white-space: nowrap; text-shadow: 1px 1px 1px rgba(0,0,0,0.1); }
+        
+        @keyframes scroll-left { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
+        .disclaimer-watermark { position: absolute; z-index: 4; color: rgba(255, 255, 255, 0.4); font-size: 22px; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); pointer-events: none; white-space: nowrap; animation: scroll-left 22s linear infinite; }
+        #top-disclaimer { top: 25px; }
+        #bottom-disclaimer { bottom: 25px; animation-delay: -11s; }
+
+        #playlistContainer { margin-top: 30px; }
+        #videoPlaylist { list-style-type: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto; }
+        #videoPlaylist li { padding: 15px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: background-color 0.3s ease; }
+        .playlist-item-title { font-weight: 600; }
+        .playlist-item-desc { font-size: 0.9em; color: #666; margin-top: 5px; }
+        #videoPlaylist li:hover { background-color: #f9f9f9; }
+        #videoPlaylist li.active { background-color: var(--active-item-bg); border-left: 5px solid var(--primary-color); }
+        .toast-message { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.75); color: white; padding: 12px 22px; border-radius: 25px; z-index: 6; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; }
+        .toast-message.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div class="main-container" id="mainContainer"></div>
+
+<template id="popupTemplate">
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; display: flex; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px 40px; border-radius: 12px; text-align: center;">
+            <h2 id="popupTitle"></h2>
+            <p id="popupMessage" style="margin-bottom: 25px; color: #666;"></p>
+            <button id="popupCloseBtn" style="width: auto; padding: 10px 30px;">OK</button>
+        </div>
+    </div>
+</template>
+
+<template id="registerTemplate">
+    <div>
+        <h3>Create an Account</h3>
+        <form id="registerForm">
+            <div class="input-group"><input type="text" id="registerUsername" placeholder="Choose a Username" required></div>
+            <div class="input-group"><input type="email" id="registerEmail" placeholder="Enter your Email" required></div>
+            <div class="input-group"><input type="tel" id="registerMobile" placeholder="Enter Mobile Number" required></div>
+            <div class="input-group"><input type="password" id="registerPassword" placeholder="Choose a Password" required><i class="fas fa-eye password-toggle"></i></div>
+            <button type="submit">Register</button>
+        </form>
+        <p class="message" id="registerMessage"></p>
+        <p class="switch-form">Already have an account? <a href="#" class="showLoginLink">Login here</a></p>
+    </div>
+</template>
+<template id="loginTemplate">
+    <div>
+        <h3>Login to Access Videos</h3>
+        <form id="loginForm">
+            <div class="input-group"><input type="email" id="loginEmail" placeholder="Enter Email" required></div>
+            <div class="input-group"><input type="password" id="loginPassword" placeholder="Enter Password" required><i class="fas fa-eye password-toggle"></i></div>
+            <button type="submit">Login</button>
+        </form>
+        <p class="message" id="loginMessage"></p>
+        <p class="switch-form">Don't have an account? <a href="#" class="showRegisterLink">Register here</a></p>
+    </div>
+</template>
+
+<template id="videoTemplate">
+    <div>
+        <div class="page-header">
+            <h3>Course Videos</h3>
+            <div class="header-buttons">
+                <a href="pdfs.html" class="materials-button">View PDF Materials</a>
+                <button class="logout-button">Logout</button>
+            </div>
+        </div>
+        <div class="video-wrapper" id="video-wrapper">
+            <div id="player"></div>
+            <div class="video-overlay"></div>
+            <div id="video-watermark" class="full-coverage-watermark"></div>
+            <div id="top-disclaimer" class="disclaimer-watermark">මෙම වීඩියෝව පිටපත් කිරීම, පටිගත කිරීම හෝ බෙදා හැරීම සපුරා තහනම්.</div>
+            <div id="bottom-disclaimer" class="disclaimer-watermark">All rights reserved. Unauthorized copying will result in legal action.</div>
+            <div id="custom-controls">
+                <button id="play-pause-btn"><i class="fas fa-play"></i></button>
+                <button id="fullscreen-btn"><i class="fas fa-expand"></i></button>
+                <div id="progress-container"><div id="progress-bar"></div></div>
+            </div>
+            <div id="keyboard-disabled-toast" class="toast-message">Keyboard Disabled</div>
+        </div>
+        <div id="playlistContainer">
+            <h4>Playlist</h4>
+            <div class="input-group" style="margin-bottom: 15px;">
+                <input type="text" id="playlistSearch" placeholder="Search Videos by Title..." style="padding: 12px; font-size: 15px;">
+            </div>
+            <ul id="videoPlaylist"></ul>
+        </div>
+    </div>
+</template>
+
+<script src="http://www.youtube.com/iframe_api"></script> 
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, sendEmailVerification, signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyASA8KptfOy9pezf3QCoWHt9Bg28yN3HsM",
+        authDomain: "amce-5d785.firebaseapp.com",
+        projectId: "amce-5d785",
+        storageBucket: "amce-5d785.appspot.com",
+        messagingSenderId: "877483628426",
+        appId: "1:877483628426:web:dfd8961b06c35e6cc95a73"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const mainContainer = document.getElementById('mainContainer');
+    let currentPlaylist = [];
+    let player;
+    let progressInterval;
+    let toastTimeout;
+    
+    let activityTimer;
+    const INACTIVITY_TIMEOUT = 30 * 1000; 
+
+    // === Mouse එක Page එකෙන් එලියට යනවද බලන function එක ===
+    const handleMouseLeavePage = () => {
+        console.log("Mouse left the page viewport. Logging out.");
+        handleLogout();
+    };
+
+    function showPopup(title, message, onOk) {
+        const template = document.getElementById('popupTemplate').content.cloneNode(true);
+        const popup = template.firstElementChild;
+        popup.querySelector('#popupTitle').textContent = title;
+        popup.querySelector('#popupMessage').textContent = message;
+        popup.querySelector('#popupCloseBtn').addEventListener('click', () => {
+            popup.remove();
+            if (onOk) onOk();
+        });
+        document.body.appendChild(popup);
+    }
+
+    function handleLogout() {
+        console.log("Cleaning up listeners on logout...");
+        document.documentElement.removeEventListener('mouseleave', handleMouseLeavePage);
+        signOut(auth).catch(error => console.error("Logout error:", error));
+    }
+
+    function resetActivityTimer() {
+        clearTimeout(activityTimer);
+        if (auth.currentUser && mainContainer.classList.contains('video-view-container')) {
+            activityTimer = setTimeout(() => {
+                console.log("User inactive for too long, logging out...");
+                handleLogout(); 
+            }, INACTIVITY_TIMEOUT);
+        }
+    }
+    function setupActivityListeners() {
+        document.addEventListener('mousemove', resetActivityTimer);
+        document.addEventListener('keydown', resetActivityTimer);
+        document.addEventListener('click', resetActivityTimer);
+        document.addEventListener('scroll', resetActivityTimer);
+        resetActivityTimer(); 
+    }
+    function removeActivityListeners() {
+        clearTimeout(activityTimer);
+        document.removeEventListener('mousemove', resetActivityTimer);
+        document.removeEventListener('keydown', resetActivityTimer);
+        document.removeEventListener('click', resetActivityTimer);
+        document.removeEventListener('scroll', resetActivityTimer);
+    }
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            if (user.emailVerified) {
+                if (!mainContainer.classList.contains('video-view-container')) {
+                    showView('video');
+                }
+                setupActivityListeners(); 
+            } else {
+                showPopup("Email Not Verified", "Your email address has not been verified...", () => { signOut(auth); showView('login'); });
+            }
+        } else {
+            if (mainContainer.classList.contains('video-view-container')) {
+                showView('login');
+            }
+            removeActivityListeners();
+            document.documentElement.removeEventListener('mouseleave', handleMouseLeavePage);
+        }
+    });
+    
+    async function showView(viewName) {
+        document.documentElement.removeEventListener('mouseleave', handleMouseLeavePage);
+
+        mainContainer.innerHTML = '';
+        const template = document.getElementById(viewName + 'Template').content.cloneNode(true);
+        mainContainer.className = viewName === 'video' ? 'main-container video-view-container' : 'main-container';
+        mainContainer.appendChild(template);
+        attachEventListeners(viewName);
+
+        if (viewName === 'video') {
+            console.log("Video view loaded. Page leave detection is active immediately.");
+            document.documentElement.addEventListener('mouseleave', handleMouseLeavePage);
+
+            if (typeof YT !== 'undefined' && YT.Player) { onYouTubeIframeAPIReady(); }
+            renderPlaylist(currentPlaylist);
+            populateWatermark('#video-watermark');
+            resetActivityTimer(); 
+        } else {
+            removeActivityListeners();
+        }
+    }
+    
+    function attachEventListeners(viewName) {
+        if (viewName === 'login' || viewName === 'register') {
+            const passwordToggles = mainContainer.querySelectorAll('.password-toggle');
+            passwordToggles.forEach(toggle => {
+                toggle.addEventListener('click', () => {
+                    const passwordInput = toggle.previousElementSibling;
+                    passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+                    toggle.classList.toggle('fa-eye-slash');
+                });
+            });
+        }
+
+        if (viewName === 'login') {
+            mainContainer.querySelector('.showRegisterLink').addEventListener('click', (e) => { e.preventDefault(); showView('register'); });
+            mainContainer.querySelector('#loginForm').addEventListener('submit', handleLogin);
+        } else if (viewName === 'register') {
+            mainContainer.querySelector('.showLoginLink').addEventListener('click', (e) => { e.preventDefault(); showView('login'); });
+            mainContainer.querySelector('#registerForm').addEventListener('submit', handleRegister);
+        } else if (viewName === 'video') {
+            const materialsButton = mainContainer.querySelector('.materials-button');
+            materialsButton?.addEventListener('click', () => {
+                console.log("Materials link clicked. Disarming leave listener for navigation.");
+                document.documentElement.removeEventListener('mouseleave', handleMouseLeavePage);
+            });
+            
+            mainContainer.querySelector('.logout-button').addEventListener('click', handleLogout);
+            mainContainer.querySelector('#play-pause-btn')?.addEventListener('click', () => player?.getPlayerState() === YT.PlayerState.PLAYING ? player.pauseVideo() : player.playVideo());
+            mainContainer.querySelector('#fullscreen-btn')?.addEventListener('click', () => document.getElementById('video-wrapper')?.requestFullscreen());
+            mainContainer.querySelector('#progress-container')?.addEventListener('click', (e) => {
+                if (!player || typeof player.getDuration !== 'function') return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const newTime = ((e.clientX - rect.left) / rect.width) * player.getDuration();
+                player.seekTo(newTime, true);
+            });
+            mainContainer.querySelector('#playlistSearch')?.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                document.querySelectorAll('#videoPlaylist li').forEach(item => {
+                    item.style.display = item.textContent.toLowerCase().includes(searchTerm) ? '' : 'none';
+                });
+            });
+
+            // === Tab මාරු කරනකොට logout වෙන එක අයින් කලා ===
+            // document.addEventListener('visibilitychange', ...); <<--- THIS BLOCK IS REMOVED
+        }
+    }
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        const email = mainContainer.querySelector('#loginEmail').value;
+        const password = mainContainer.querySelector('#loginPassword').value;
+        const messageEl = mainContainer.querySelector('#loginMessage');
+        const submitBtn = e.submitter;
+        submitBtn.disabled = true;
+        messageEl.textContent = "Logging in...";
+        try {
+            await setPersistence(auth, browserSessionPersistence); 
+            await signInWithEmailAndPassword(auth, email, password);
+        } catch (error) {
+            messageEl.textContent = 'Invalid email or password.';
+        } finally {
+            submitBtn.disabled = false;
+        }
+    }
+
+    async function handleRegister(e) {
+        e.preventDefault();
+        const username = mainContainer.querySelector('#registerUsername').value;
+        const email = mainContainer.querySelector('#registerEmail').value;
+        const mobile = mainContainer.querySelector('#registerMobile').value;
+        const password = mainContainer.querySelector('#registerPassword').value;
+        const messageEl = mainContainer.querySelector('#registerMessage');
+        const submitBtn = e.submitter;
+        submitBtn.disabled = true;
+        messageEl.textContent = "Registering...";
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            await setDoc(doc(db, "users", userCredential.user.uid), { username, email, mobile, createdAt: new Date() });
+            await sendEmailVerification(userCredential.user);
+            showPopup("Registration Successful!", "A verification link has been sent to your email.", () => showView('login'));
+        } catch (error) {
+            messageEl.textContent = error.message;
+        } finally {
+            submitBtn.disabled = false;
+        }
+    }
+
+    async function populateWatermark(containerSelector) {
+        const currentUser = auth.currentUser;
+        if (!currentUser) return;
+        const watermarkContainer = document.querySelector(containerSelector);
+        if (!watermarkContainer) return;
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+            const { username, mobile } = userDocSnap.data();
+            const details = `${username} / ${currentUser.email} / ${mobile}`;
+            let html = '';
+            for (let i = 0; i < 200; i++) html += `<span class="watermark-item">${details}</span>`;
+            watermarkContainer.innerHTML = html;
+        }
+    }
+    
+    window.onYouTubeIframeAPIReady = function() {
+        if (document.getElementById('player')) {
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                playerVars: { 'playsinline': 1, 'controls': 0, 'rel': 0, 'showinfo': 0, 'modestbranding': 1, 'fs': 0 },
+                events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange }
+            });
+        }
+    }
+
+    function onPlayerReady(event) { if (currentPlaylist.length > 0) { event.target.cueVideoById(currentPlaylist[0].id); } }
+    function onPlayerStateChange(event) {
+        const videoWrapper = document.getElementById('video-wrapper');
+        const playPauseBtnIcon = document.querySelector('#play-pause-btn i');
+        if (!videoWrapper || !playPauseBtnIcon) return;
+        clearInterval(progressInterval);
+        if (event.data == YT.PlayerState.PLAYING) {
+            videoWrapper.classList.add('playing');
+            playPauseBtnIcon.className = 'fas fa-pause';
+            progressInterval = setInterval(updateProgressBar, 250);
+        } else {
+            videoWrapper.classList.remove('playing');
+            playPauseBtnIcon.className = 'fas fa-play';
+        }
+    }
+    function updateProgressBar() {
+        if (!player || typeof player.getDuration !== 'function') return;
+        const progressBar = document.getElementById('progress-bar');
+        const currentTime = player.getCurrentTime();
+        const duration = player.getDuration();
+        if (progressBar && duration > 0) { progressBar.style.width = `${(currentTime / duration) * 100}%`; }
+    }
+    function renderPlaylist(playlist) {
+        const playlistElement = document.getElementById('videoPlaylist');
+        if (!playlistElement) return;
+        playlistElement.innerHTML = '';
+        if (playlist.length === 0) { playlistElement.innerHTML = `<li>No videos available yet.</li>`; return; }
+        playlist.forEach((video, index) => {
+            const listItem = document.createElement('li');
+            listItem.className = 'playlist-item';
+            listItem.innerHTML = `<strong class="playlist-item-title">${video.title}</strong><p class="playlist-item-desc">${video.description || ''}</p>`;
+            listItem.addEventListener('click', () => {
+                if (player && player.loadVideoById) {
+                    player.loadVideoById(video.id);
+                    document.querySelector('#videoPlaylist li.active')?.classList.remove('active');
+                    listItem.classList.add('active');
+                }
+            });
+            if (index === 0) listItem.classList.add('active');
+            playlistElement.appendChild(listItem);
+        });
+    }
+
+    const videosQuery = query(collection(db, "videos"), orderBy("createdAt", "desc"));
+    onSnapshot(videosQuery, (snapshot) => {
+        currentPlaylist = [];
+        snapshot.forEach((doc) => currentPlaylist.push(doc.data()));
+        if (document.getElementById('videoPlaylist')) { renderPlaylist(currentPlaylist); }
+    });
+
+    document.addEventListener('keydown', e => { 
+        if (document.getElementById('video-wrapper')) { 
+            const activeElement = document.activeElement;
+            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) { return; }
+            e.preventDefault(); 
+            const toast = document.getElementById('keyboard-disabled-toast');
+            if (toast) {
+                clearTimeout(toastTimeout);
+                toast.classList.add('show');
+                toastTimeout = setTimeout(() => toast.classList.remove('show'), 1500);
+            }
+        }
+    });
+
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    if (!auth.currentUser) {
+        showView('login');
+    }
+
+</script>
+
+</body>
+</html>
