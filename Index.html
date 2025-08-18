@@ -91,6 +91,7 @@
         <p class="switch-form">Already have an account? <a href="#" class="showLoginLink">Login here</a></p>
     </div>
 </template>
+
 <template id="loginTemplate">
     <div>
         <h3>Login to Access Videos</h3>
@@ -100,9 +101,13 @@
             <button type="submit">Login</button>
         </form>
         <p class="message" id="loginMessage"></p>
+        <p class="switch-form">
+            <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+        </p>
         <p class="switch-form">Don't have an account? <a href="#" class="showRegisterLink">Register here</a></p>
     </div>
 </template>
+
 
 <template id="videoTemplate">
     <div>
@@ -138,9 +143,11 @@
 
 <script src="https://www.youtube.com/iframe_api"></script> 
 <script type="module">
+    // /// START: අලුතෙන් එකතු කරපු JS import එක ///
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, sendEmailVerification, signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, sendEmailVerification, signInWithEmailAndPassword, setPersistence, browserSessionPersistence, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    // /// END: අලුතෙන් එකතු කරපු JS import එක ///
 
     const firebaseConfig = {
         apiKey: "AIzaSyASA8KptfOy9pezf3QCoWHt9Bg28yN3HsM",
@@ -164,7 +171,6 @@
     let activityTimer;
     const INACTIVITY_TIMEOUT = 30 * 1000; 
 
-    // === Mouse එක Page එකෙන් එලියට යනවද බලන function එක ===
     const handleMouseLeavePage = () => {
         console.log("Mouse left the page viewport. Logging out.");
         handleLogout();
@@ -268,6 +274,40 @@
         if (viewName === 'login') {
             mainContainer.querySelector('.showRegisterLink').addEventListener('click', (e) => { e.preventDefault(); showView('register'); });
             mainContainer.querySelector('#loginForm').addEventListener('submit', handleLogin);
+            
+            // /// START: අලුතෙන් එකතු කරපු JS logic එක ///
+            mainContainer.querySelector('#forgotPasswordLink').addEventListener('click', (e) => {
+                e.preventDefault();
+                const emailInput = mainContainer.querySelector('#loginEmail');
+                const messageEl = mainContainer.querySelector('#loginMessage');
+                const email = emailInput.value;
+
+                if (!email) {
+                    messageEl.className = 'message error-message';
+                    messageEl.textContent = 'Please enter your email address first.';
+                    return;
+                }
+
+                messageEl.className = 'message';
+                messageEl.textContent = 'Sending reset email...';
+
+                sendPasswordResetEmail(auth, email)
+                    .then(() => {
+                        messageEl.className = 'message success-message';
+                        messageEl.textContent = 'Password reset email sent! Please check your inbox.';
+                    })
+                    .catch((error) => {
+                        messageEl.className = 'message error-message';
+                        if (error.code === 'auth/user-not-found') {
+                            messageEl.textContent = 'No user found with this email address.';
+                        } else {
+                            messageEl.textContent = 'Error sending email. Please try again.';
+                        }
+                        console.error('Password Reset Error:', error);
+                    });
+            });
+            // /// END: අලුතෙන් එකතු කරපු JS logic එක ///
+
         } else if (viewName === 'register') {
             mainContainer.querySelector('.showLoginLink').addEventListener('click', (e) => { e.preventDefault(); showView('login'); });
             mainContainer.querySelector('#registerForm').addEventListener('submit', handleRegister);
@@ -293,9 +333,6 @@
                     item.style.display = item.textContent.toLowerCase().includes(searchTerm) ? '' : 'none';
                 });
             });
-
-            // === Tab මාරු කරනකොට logout වෙන එක අයින් කලා ===
-            // document.addEventListener('visibilitychange', ...); <<--- THIS BLOCK IS REMOVED
         }
     }
 

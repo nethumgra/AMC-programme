@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset</title>
+</head>
+<body>
+
+    <hr>
+
+    <div id="password-reset-section">
+        <h3>Reset Your Password</h3>
+        <p>Enter your email address and we will send you a link to reset your password.</p>
+        
+        <input type="email" id="email_for_reset" placeholder="Enter your email">
+        <button id="reset_password_btn">Send Reset Email</button>
+        
+        <p id="reset_message"></p>
+    </div>
+
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+
+    <script>
+        // --- Firebase Initialization ---
+// IMPORTANT: Replace this with your project's Firebase config object
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+
+// --- Password Reset Logic ---
+
+// Get references to the HTML elements
+const emailForResetInput = document.getElementById('email_for_reset');
+const resetPasswordBtn = document.getElementById('reset_password_btn');
+const resetMessage = document.getElementById('reset_message');
+
+// Add a click event listener to the button
+resetPasswordBtn.addEventListener('click', () => {
+    
+    // Get the email from the input field
+    const email = emailForResetInput.value;
+
+    // Basic validation: Check if email is empty
+    if (!email) {
+        resetMessage.textContent = "Please enter your email address.";
+        resetMessage.style.color = "red";
+        return;
+    }
+
+    // Use Firebase to send the password reset email
+    auth.sendPasswordResetEmail(email)
+        .then(() => {
+            // Password reset email sent successfully.
+            resetMessage.textContent = "Password reset email sent! Please check your inbox (and spam folder).";
+            resetMessage.style.color = "green";
+        })
+        .catch((error) => {
+            // An error happened.
+            const errorCode = error.code;
+            let errorMessage = error.message;
+
+            // Provide more user-friendly error messages
+            if (errorCode === 'auth/user-not-found') {
+                errorMessage = "No user found with this email address.";
+            } else if (errorCode === 'auth/invalid-email') {
+                errorMessage = "The email address is not valid.";
+            }
+
+            console.error("Password Reset Error:", error);
+            resetMessage.textContent = errorMessage;
+            resetMessage.style.color = "red";
+        });
+});
+    </script>
+
+</body>
+</html>
