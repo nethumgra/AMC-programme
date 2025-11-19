@@ -1,86 +1,494 @@
 <!DOCTYPE html>
-<html lang="si">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Materials</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <title>Materials - AMC BRIDGE</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-        :root { --primary-color: #4CAF50; --primary-hover: #45a049; --background-color: #f0f2f5; --form-background: #ffffff; --text-color: #333; --border-color: #ddd; --error-color: #e74c3c; }
-        body { font-family: 'Poppins', sans-serif; margin: 0; padding: 20px; background-color: var(--background-color); }
-        .main-container { max-width: 900px; margin: 20px auto; background-color: var(--form-background); padding: 20px 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-        .page-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); }
-        .page-header h3 { margin: 0; font-size: 1.5em; }
-        .header-buttons { display: flex; gap: 15px; }
-        .header-buttons a, .header-buttons button { width: auto; padding: 8px 15px; font-size: 14px; text-decoration: none; border-radius: 6px; color: white; border: none; cursor: pointer; }
-        .back-button { background-color: var(--primary-color); }
-        .logout-button { background-color: var(--error-color); }
-        
-        .search-container { margin-bottom: 20px; }
-        #pdfSearch { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        #pdfSearch:focus { outline: none; border-color: var(--primary-color); }
+        :root {
+            --primary-color: #7c3aed;
+            --primary-hover: #6d28d9;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-light: #6b7280;
+            --border-color: #e5e7eb;
+        }
 
-        #pdf-list { list-style-type: none; padding: 0; margin: 0; }
-        #pdf-list li { background-color: #fff; padding: 15px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 10px; transition: background-color 0.3s ease; cursor: pointer; display: flex; align-items: center; font-weight: 500;}
-        #pdf-list li:hover { background-color: #f0f0f0; }
-        #pdf-list li i { margin-right: 12px; font-size: 1.2em; color: var(--primary-color); }
-        
-        .list-loader-container { display: flex; justify-content: center; align-items: center; padding: 40px; color: #888; gap: 15px; font-size: 1.1em; }
-        .loader { border: 4px solid #f3f3f3; border-radius: 50%; border-top: 4px solid var(--primary-color); width: 30px; height: 30px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        #pdf-viewer-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 20px;}
-        #pdf-viewer-header { width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; box-sizing: border-box; }
-        #pdf-viewer-title { color: white; font-weight: 600; font-size: 1.1em; }
-        #page-render-status { color: #ccc; font-size: 0.9em; }
-        #pdf-viewer-close { font-size: 30px; color: white; cursor: pointer; background: transparent; border: none; }
-        #pdf-viewer-content { width: 100%; height: calc(100% - 80px); overflow: auto; text-align: center; }
-        .pdf-page-canvas { margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* --- Sidebar Styles --- */
+        .sidebar-nav {
+            width: 260px;
+            background: white;
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            padding-left: 10px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: var(--text-light);
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .nav-item:hover { background: #f5f3ff; color: var(--primary-color); }
+        .nav-item.active { background: #f5f3ff; color: var(--primary-color); font-weight: 600; }
+
+        /* --- Main Content Area --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .top-header {
+            height: 70px;
+            background: white;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            flex-shrink: 0;
+        }
+
+        .breadcrumbs { font-size: 0.9rem; color: var(--text-light); }
+        .breadcrumbs span { color: var(--text-main); font-weight: 500; }
+
+        .user-actions { display: flex; gap: 15px; align-items: center; }
+        .btn-logout {
+            padding: 8px 16px;
+            border: 1px solid #fee2e2;
+            background: #fff1f2;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #991b1b;
+            transition: 0.2s;
+        }
+        .btn-logout:hover { background: #fee2e2; }
+
+        /* --- Materials Content --- */
+        .content-scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .materials-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .materials-header h1 { font-size: 1.8rem; font-weight: 700; color: var(--text-main); }
+
+        .search-bar {
+            position: relative;
+            width: 300px;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+        }
+        .search-bar input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1); }
+        .search-bar i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+        }
+
+        /* --- PDF List Styling --- */
+        #pdf-list {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .material-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .material-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(124, 58, 237, 0.1);
+        }
+
+        .icon-box {
+            width: 45px;
+            height: 45px;
+            background: #f5f3ff;
+            color: var(--primary-color);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .material-info {
+            overflow: hidden;
+        }
+
+        .material-title {
+            font-weight: 600;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+
+        .material-type {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            background: #f3f4f6;
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        /* --- PRO PDF VIEWER MODAL --- */
+        #pdf-viewer-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; 
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Toolbar */
+        .pdf-toolbar {
+            height: 60px;
+            background: #1f2937;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .pdf-title-area { font-weight: 600; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
         
+        .pdf-controls { display: flex; align-items: center; gap: 15px; }
+        
+        .viewer-btn {
+            background: rgba(255,255,255,0.1);
+            border: none; color: white;
+            padding: 8px 12px; border-radius: 6px;
+            cursor: pointer; font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .viewer-btn:hover { background: rgba(255,255,255,0.2); }
+        .close-btn { background: #ef4444; }
+        .close-btn:hover { background: #dc2626; }
+
+        /* Main Viewer Layout (Split View) */
+        .pdf-body {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            background: #e5e7eb; 
+            position: relative;
+        }
+
+        /* Sidebar Thumbnails */
+        .pdf-sidebar {
+            width: 250px;
+            background: white;
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex-shrink: 0;
+            z-index: 5; 
+        }
+
+        .thumbnail-wrapper {
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+            opacity: 0.7;
+        }
+        .thumbnail-wrapper:hover { opacity: 1; }
+        .thumbnail-wrapper.active { opacity: 1; }
+        .thumbnail-wrapper.active canvas { border: 3px solid var(--primary-color); }
+
+        .thumbnail-canvas {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .page-label { font-size: 0.8rem; color: var(--text-light); margin-top: 5px; }
+
+        /* Main Canvas Area */
+        #pdf-viewer-content {
+            flex: 1;
+            overflow: auto;
+            padding: 30px;
+            display: flex;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        #pdf-canvas-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: relative;
+        }
+
+        .pdf-page-canvas {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            background: white;
+        }
+
+        /* --- Watermark (FIXED OVERLAY - Gray & Clean) --- */
         @keyframes pan-grid { 0% { transform: translate(0, 0); } 50% { transform: translate(-40px, -20px); } 100% { transform: translate(0, 0); } }
-        .full-coverage-watermark { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: center; overflow: hidden; animation: pan-grid 25s linear infinite; }
-        .watermark-item { color: rgba(0, 0, 0, 0.12); font-size: 16px; font-weight: 600; padding: 20px 40px; transform: rotate(-30deg); white-space: nowrap; text-shadow: 1px 1px 1px rgba(255,255,255,0.1); }
         
-        .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 3000; display: flex; justify-content: center; align-items: center; }
-        .popup-content { background: white; padding: 30px 40px; border-radius: 12px; text-align: center; }
+        .full-coverage-watermark { 
+            position: absolute; 
+            top: 0; 
+            left: 250px; 
+            width: calc(100% - 250px); 
+            height: 100%; 
+            z-index: 99; 
+            pointer-events: none; 
+            display: flex; 
+            flex-wrap: wrap; 
+            align-items: flex-start; 
+            justify-content: center; 
+            overflow: hidden; 
+            animation: pan-grid 25s linear infinite; 
+        }
+        
+        .watermark-item { 
+            /* Balanced Gray visibility */
+            color: rgba(0, 0, 0, 0.15); 
+            font-size: 16px; 
+            font-weight: 400; 
+            padding: 50px; 
+            transform: rotate(-30deg); 
+            white-space: nowrap; 
+            text-shadow: none;
+        }
+
+        /* --- Loaders --- */
+        .loader-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; color: var(--text-light); gap: 15px; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #e5e7eb; border-top-color: var(--primary-color); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* --- SECURITY CHECK ANIMATION STYLES --- */
+        .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; display: flex; justify-content: center; align-items: center; }
+        .popup-content { background: white; padding: 40px; border-radius: 16px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 400px; }
+
+        .security-check-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0 0 0;
+            width: 100%;
+            text-align: left;
+        }
+
+        .security-check-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 12px;
+            color: var(--text-light);
+            font-size: 0.95rem;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+
+        .security-check-item.active {
+            opacity: 1;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .security-check-item.completed {
+            opacity: 1;
+            color: #059669; /* Green */
+            font-weight: 500;
+        }
+
+        .check-icon {
+            width: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .step-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--primary-color);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* --- SECURITY OVERLAY (Tab Lock) --- */
+        .security-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: white; }
+        .security-overlay.active { display: flex; }
+        .security-icon { font-size: 4rem; color: #ef4444; margin-bottom: 20px; }
+        .security-title { font-size: 2rem; font-weight: 800; margin-bottom: 10px; color: #ef4444; text-transform: uppercase; }
+        .security-msg { font-size: 1.1rem; color: #d1d5db; margin-bottom: 30px; max-width: 500px; line-height: 1.5; }
+        
+        .verify-btn { padding: 15px 40px; background: var(--primary-color); color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+        .verify-btn:hover { background: var(--primary-hover); transform: scale(1.02); }
+
+        /* Loader for Tab Lock Security */
+        .loader-circle { border: 4px solid rgba(255,255,255,0.3); border-left-color: var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        .success-icon { font-size: 4rem; color: #22c55e; margin-bottom: 15px; display: none; animation: popIn 0.5s ease; }
+        @keyframes popIn { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .sidebar-nav { display: none; }
+            #pdf-list { grid-template-columns: 1fr; }
+            .pdf-sidebar { display: none; } 
+            .full-coverage-watermark { left: 0; width: 100%; } 
+        }
     </style>
 </head>
 <body>
 
-    <div class="main-container" id="pdfPageContainer">
-        <div class="page-header">
-            <h3>Course Materials</h3>
-            <div class="header-buttons">
-                <a href="Index.html" class="back-button">Back to Videos</a>
-                <button class="logout-button">Logout</button>
-            </div>
+    <div id="securityOverlay" class="security-overlay">
+        <div id="warningContent" style="display: flex; flex-direction: column; align-items: center;">
+            <i class="fas fa-exclamation-triangle security-icon"></i>
+            <div class="security-title">Security Alert</div>
+            <p class="security-msg">Don't try to screen record or switch tabs. Your activity has been flagged. Please verify you are active to resume.</p>
+            <button id="verifyBtn" class="verify-btn"><i class="fas fa-user-shield"></i> Resume</button>
         </div>
-        <div class="search-container">
-            <input type="text" id="pdfSearch" placeholder="Search materials by title...">
+        <div id="loadingContent" style="display: none; flex-direction: column; align-items: center;">
+            <div class="loader-circle"></div>
+            <p style="font-size: 1.1rem; color: #ccc;">Verifying...</p>
         </div>
-        <ul id="pdf-list">
-            <div class="list-loader-container">
-                <div class="loader"></div>
-                <span>Loading Materials...</span>
-            </div>
-        </ul>
+        <div id="successContent" style="display: none; flex-direction: column; align-items: center;">
+            <i class="fas fa-check-circle success-icon" style="display: block;"></i>
+            <div class="security-title" style="color: #22c55e;">Verified!</div>
+        </div>
     </div>
+
+    <aside class="sidebar-nav">
+        <div class="brand"><i class="fas fa-graduation-cap"></i> AMC BRIDGE</div>
+        <a href="#" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="#" class="nav-item active"><i class="fas fa-book"></i> Materials</a>
+        <a href="index.html" class="nav-item"><i class="fas fa-play-circle"></i> Courses</a>
+        <div style="margin-top: auto;">
+            <a href="#" class="nav-item"><i class="fas fa-cog"></i> Settings</a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div class="breadcrumbs">Dashboard / AMC Programme / <span>Materials</span></div>
+            <div class="user-actions">
+                <button class="btn-logout">Logout</button>
+            </div>
+        </header>
+
+        <div class="content-scroll-area">
+            <div class="materials-header">
+                <h1>Course Materials</h1>
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="pdfSearch" placeholder="Search files...">
+                </div>
+            </div>
+            <ul id="pdf-list">
+                <div class="loader-container"><div class="spinner"></div><span>Loading library...</span></div>
+            </ul>
+        </div>
+    </main>
 
     <template id="pdfViewerTemplate">
         <div id="pdf-viewer-modal">
-            <div id="pdf-viewer-header">
-                <span id="pdf-viewer-title"></span>
-                <span id="page-render-status"></span>
-                <button id="pdf-viewer-close">×</button>
-            </div>
-            <div id="pdf-viewer-content">
-                 <div id="pdf-watermark-container" style="position: relative; display: inline-block;">
-                    <div id="pdf-canvas-container"></div>
-                    <div id="pdf-watermark" class="full-coverage-watermark"></div>
+            <div class="pdf-toolbar">
+                <div class="pdf-title-area">
+                    <i class="fas fa-file-pdf" style="color:#ef4444;"></i>
+                    <span id="pdf-viewer-title">Document Name</span>
                 </div>
+                <div class="pdf-controls">
+                    <span id="page-render-status" style="font-size:0.85rem; opacity:0.8;">Loading...</span>
+                    <button class="viewer-btn close-btn" id="pdf-viewer-close"><i class="fas fa-times"></i> Close</button>
+                </div>
+            </div>
+            
+            <div class="pdf-body">
+                <div id="pdf-sidebar" class="pdf-sidebar">
+                    </div>
+
+                <div id="pdf-viewer-content">
+                     <div id="pdf-canvas-container">
+                        </div>
+                </div>
+
+                <div id="pdf-watermark" class="full-coverage-watermark"></div>
             </div>
         </div>
     </template>
@@ -88,202 +496,286 @@
     <template id="loadingPopupTemplate">
         <div class="popup-overlay">
             <div class="popup-content">
-                <p style="margin:0; font-weight:500;"></p>
+                <h3 style="margin:0 0 10px 0; color:#1f2937; font-size:1.2rem;">Security Verification</h3>
+                <p style="margin:0; font-size:0.9rem; color:#6b7280;">Establishing secure connection...</p>
+                
+                <ul class="security-check-list">
+                    <li class="security-check-item" id="step-1">
+                        <div class="check-icon"><i class="far fa-circle"></i></div>
+                        <span>Verifying User Session</span>
+                    </li>
+                    <li class="security-check-item" id="step-2">
+                        <div class="check-icon"><i class="far fa-circle"></i></div>
+                        <span>Checking Device Integrity</span>
+                    </li>
+                    <li class="security-check-item" id="step-3">
+                        <div class="check-icon"><i class="far fa-circle"></i></div>
+                        <span>Establishing Encrypted Tunnel</span>
+                    </li>
+                    <li class="security-check-item" id="step-4">
+                        <div class="check-icon"><i class="far fa-circle"></i></div>
+                        <span>Decrypting Document</span>
+                    </li>
+                </ul>
             </div>
         </div>
     </template>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    // This URL is now correctly set with the one you provided.
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzv4pdvSb6CEQrnGZ6qBc_gZWledDBI1XZ9FsP2hYTUd6YQ4bBCmFDjT2WdtpaHFBDjw/exec";
-    
-    const firebaseConfig = {
-        apiKey: "AIzaSyASA8KptfOy9pezf3QCoWHt9Bg28yN3HsM",
-        authDomain: "amce-5d785.firebaseapp.com",
-        projectId: "amce-5d785",
-        storageBucket: "amce-5d785.appspot.com",
-        messagingSenderId: "877483628426",
-        appId: "1:877483628426:web:dfd8961b06c35e6cc95a73"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
-
-    onAuthStateChanged(auth, (user) => {
-        if (!user || !user.emailVerified) {
-            window.location.href = 'index.html';
-        }
-    });
-
-    document.querySelector('.logout-button').addEventListener('click', () => signOut(auth));
-
-    const pdfsQuery = query(collection(db, "pdfs"), orderBy("createdAt", "desc"));
-    onSnapshot(pdfsQuery, (snapshot) => {
-        const pdfListEl = document.getElementById('pdf-list');
-        pdfListEl.innerHTML = ''; 
-        if (snapshot.empty) {
-            pdfListEl.innerHTML = '<li>No materials available yet.</li>';
-            return;
-        }
-        snapshot.forEach((doc) => {
-            const pdf = doc.data();
-            const listItem = document.createElement('li');
-            listItem.innerHTML = `<i class="fas fa-file-pdf"></i><span>${pdf.title}</span>`;
-            listItem.addEventListener('click', () => openPdfViewer(pdf.url, pdf.title, pdf.fileId));
-            pdfListEl.appendChild(listItem);
-        });
-    });
-
-    const searchInput = document.getElementById('pdfSearch');
-    searchInput.addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        const pdfItems = document.querySelectorAll('#pdf-list li');
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzv4pdvSb6CEQrnGZ6qBc_gZWledDBI1XZ9FsP2hYTUd6YQ4bBCmFDjT2WdtpaHFBDjw/exec";
         
-        pdfItems.forEach(item => {
-            const title = item.textContent.toLowerCase();
-            if (title.includes(searchTerm)) {
-                item.style.display = 'flex';
+        const firebaseConfig = {
+            apiKey: "AIzaSyASA8KptfOy9pezf3QCoWHt9Bg28yN3HsM",
+            authDomain: "amce-5d785.firebaseapp.com",
+            projectId: "amce-5d785",
+            storageBucket: "amce-5d785.appspot.com",
+            messagingSenderId: "877483628426",
+            appId: "1:877483628426:web:dfd8961b06c35e6cc95a73"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+
+        // Security Logic Variables
+        const securityOverlay = document.getElementById('securityOverlay');
+        const verifyBtn = document.getElementById('verifyBtn');
+        let isLocked = false;
+        
+        // --- SECURITY LOCK (Tab Switching) ---
+        function lockScreen() {
+            if(isLocked || !auth.currentUser) return;
+            // Only lock if PDF viewer is currently active
+            if(document.getElementById('pdf-viewer-modal')) {
+                isLocked = true;
+                document.getElementById('warningContent').style.display = 'flex';
+                document.getElementById('loadingContent').style.display = 'none';
+                document.getElementById('successContent').style.display = 'none';
+                securityOverlay.classList.add('active');
+            }
+        }
+
+        verifyBtn.addEventListener('click', () => {
+            document.getElementById('warningContent').style.display = 'none';
+            document.getElementById('loadingContent').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('loadingContent').style.display = 'none';
+                document.getElementById('successContent').style.display = 'flex';
+                setTimeout(() => {
+                    securityOverlay.classList.remove('active');
+                    isLocked = false;
+                }, 1500);
+            }, 2000);
+        });
+
+        const handleVisibilityChange = () => { if (document.hidden) lockScreen(); };
+        const handleMouseLeave = () => { lockScreen(); };
+
+        function setupSecurity() {
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+            document.documentElement.addEventListener('mouseleave', handleMouseLeave);
+        }
+
+        // --- AUTH & LOGIC ---
+        onAuthStateChanged(auth, (user) => {
+            if (!user || !user.emailVerified) {
+                window.location.href = 'index.html';
             } else {
-                item.style.display = 'none';
+                setupSecurity();
             }
         });
-    });
 
-    function showLoadingPopup(message) {
-        hideLoadingPopup();
-        const template = document.getElementById('loadingPopupTemplate').content.cloneNode(true);
-        template.querySelector('p').textContent = message;
-        document.body.appendChild(template);
-    }
+        document.querySelector('.btn-logout').addEventListener('click', () => {
+            signOut(auth).then(() => window.location.href = 'index.html');
+        });
 
-    function hideLoadingPopup() {
-        const popup = document.querySelector('.popup-overlay');
-        if (popup) popup.remove();
-    }
-    
-    async function populateWatermark(containerSelector) {
-        const watermarkContainer = document.querySelector(containerSelector);
-        if (!watermarkContainer || !auth.currentUser) return;
-        const userDocRef = doc(db, "users", auth.currentUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-            const { username, mobile } = userDocSnap.data();
-            const details = `${username} / ${auth.currentUser.email} / ${mobile}`;
-            let html = '';
-            for (let i = 0; i < 200; i++) html += `<span class="watermark-item">${details}</span>`;
-            watermarkContainer.innerHTML = html;
-        }
-    }
-
-    async function openPdfViewer(driveUrl, pdfTitle, fileIdFromDb) {
-        let fileId = fileIdFromDb;
-        if (!fileId) {
-            const regex = /id=([a-zA-Z0-9_-]+)/;
-            const match = driveUrl.match(regex);
-            if (!match || !match[1]) {
-                alert("Invalid PDF link. Cannot find File ID.");
+        // Fetch PDFs
+        const pdfsQuery = query(collection(db, "pdfs"), orderBy("createdAt", "desc"));
+        onSnapshot(pdfsQuery, (snapshot) => {
+            const pdfListEl = document.getElementById('pdf-list');
+            pdfListEl.innerHTML = ''; 
+            if (snapshot.empty) {
+                pdfListEl.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#888; padding:50px;">No materials available.</div>';
                 return;
             }
-            fileId = match[1];
+            snapshot.forEach((doc) => {
+                const pdf = doc.data();
+                const listItem = document.createElement('li');
+                listItem.className = 'material-card';
+                listItem.innerHTML = `
+                    <div class="icon-box"><i class="fas fa-file-pdf"></i></div>
+                    <div class="material-info">
+                        <div class="material-title">${pdf.title}</div>
+                        <span class="material-type">PDF Document</span>
+                    </div>
+                `;
+                listItem.addEventListener('click', () => openPdfViewer(pdf.url, pdf.title, pdf.fileId));
+                pdfListEl.appendChild(listItem);
+            });
+        });
+
+        const searchInput = document.getElementById('pdfSearch');
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const pdfItems = document.querySelectorAll('#pdf-list li');
+            pdfItems.forEach(item => {
+                const title = item.querySelector('.material-title').textContent.toLowerCase();
+                if (title.includes(searchTerm)) item.style.display = 'flex';
+                else item.style.display = 'none';
+            });
+        });
+
+        function hideLoadingPopup() {
+            const popup = document.querySelector('.popup-overlay');
+            if (popup) popup.remove();
+        }
+        
+        async function populateWatermark(containerSelector) {
+            const watermarkContainer = document.querySelector(containerSelector);
+            if (!watermarkContainer || !auth.currentUser) return;
+            const userDocRef = doc(db, "users", auth.currentUser.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            if (userDocSnap.exists()) {
+                const { username, mobile } = userDocSnap.data();
+                const details = `${username} / ${auth.currentUser.email} / ${mobile}`;
+                let html = '';
+                for (let i = 0; i < 200; i++) html += `<span class="watermark-item">${details}</span>`;
+                watermarkContainer.innerHTML = html;
+            }
         }
 
-        showLoadingPopup("Please wait, preparing document...");
+        // --- SECURITY CHECK ANIMATION LOGIC ---
+        const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-        try {
-            const res = await fetch(`${SCRIPT_URL}?fileId=${fileId}`);
-            const data = await res.json();
-            if (data.status !== 'success') throw new Error(data.message);
+        async function runSecurityCheckSequence() {
+            const steps = ['step-1', 'step-2', 'step-3', 'step-4'];
+            for (const stepId of steps) {
+                const el = document.getElementById(stepId);
+                const iconContainer = el.querySelector('.check-icon');
+                // Set Active
+                el.classList.add('active');
+                iconContainer.innerHTML = '<div class="step-spinner"></div>';
+                // Random Delay
+                await wait(Math.floor(Math.random() * 500) + 400);
+                // Set Completed
+                el.classList.remove('active');
+                el.classList.add('completed');
+                iconContainer.innerHTML = '<i class="fas fa-check-circle"></i>';
+            }
+            await wait(500);
+        }
 
-            hideLoadingPopup();
-            const pdfDataBinary = atob(data.data);
-            const template = document.getElementById('pdfViewerTemplate').content.cloneNode(true);
+        // --- OPEN PDF FUNCTION (With Animation) ---
+        async function openPdfViewer(driveUrl, pdfTitle, fileIdFromDb) {
+            let fileId = fileIdFromDb;
+            if (!fileId) {
+                const regex = /id=([a-zA-Z0-9_-]+)/;
+                const match = driveUrl.match(regex);
+                if (!match || !match[1]) { alert("Invalid PDF link."); return; }
+                fileId = match[1];
+            }
+
+            // Show Security Check Popup
+            const template = document.getElementById('loadingPopupTemplate').content.cloneNode(true);
             document.body.appendChild(template);
+
+            try {
+                // Run Animation & Fetch Data
+                const [animationResult, apiResponse] = await Promise.all([
+                    runSecurityCheckSequence(), 
+                    fetch(`${SCRIPT_URL}?fileId=${fileId}`)
+                ]);
+
+                const data = await apiResponse.json();
+                if (data.status !== 'success') throw new Error(data.message);
+
+                hideLoadingPopup();
+                const pdfDataBinary = atob(data.data);
+                
+                // Open Modal
+                const viewerTemplate = document.getElementById('pdfViewerTemplate').content.cloneNode(true);
+                document.body.appendChild(viewerTemplate);
+                
+                document.getElementById('pdf-viewer-title').textContent = pdfTitle;
+                document.getElementById('pdf-viewer-close').addEventListener('click', () => {
+                    document.getElementById('pdf-viewer-modal').remove();
+                });
+
+                await populateWatermark('#pdf-watermark');
+                
+                const pdfDoc = await pdfjsLib.getDocument({ data: pdfDataBinary }).promise;
+                const canvasContainer = document.getElementById('pdf-canvas-container');
+                const sidebarContainer = document.getElementById('pdf-sidebar');
+                
+                renderAllPages(pdfDoc, canvasContainer, sidebarContainer);
+
+            } catch (err) {
+                hideLoadingPopup();
+                alert("Security verification failed or network error.");
+                console.error("Error:", err);
+            }
+        }
+
+        async function renderAllPages(pdfDoc, mainContainer, sidebarContainer) {
+            const statusEl = document.getElementById('page-render-status');
             
-            document.getElementById('pdf-viewer-title').textContent = pdfTitle;
-            document.getElementById('pdf-viewer-close').addEventListener('click', () => document.getElementById('pdf-viewer-modal').remove());
+            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                if (statusEl) statusEl.textContent = `Rendering ${pageNum} / ${pdfDoc.numPages}`;
+                
+                // Main Page
+                const page = await pdfDoc.getPage(pageNum);
+                const viewport = page.getViewport({ scale: 1.5 });
+                const canvas = document.createElement('canvas');
+                canvas.className = 'pdf-page-canvas';
+                canvas.id = `page-${pageNum}`; 
+                const ctx = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                mainContainer.appendChild(canvas);
 
-            await populateWatermark('#pdf-watermark');
+                // Thumbnail
+                const thumbViewport = page.getViewport({ scale: 0.2 });
+                const thumbCanvas = document.createElement('canvas');
+                thumbCanvas.className = 'thumbnail-canvas';
+                const thumbCtx = thumbCanvas.getContext('2d');
+                thumbCanvas.height = thumbViewport.height;
+                thumbCanvas.width = thumbViewport.width;
+
+                const thumbWrapper = document.createElement('div');
+                thumbWrapper.className = 'thumbnail-wrapper';
+                thumbWrapper.innerHTML = `<div class="page-label">Page ${pageNum}</div>`;
+                thumbWrapper.insertBefore(thumbCanvas, thumbWrapper.firstChild);
+                
+                thumbWrapper.addEventListener('click', () => {
+                    const targetPage = document.getElementById(`page-${pageNum}`);
+                    if(targetPage) targetPage.scrollIntoView({ behavior: 'smooth' });
+                    document.querySelectorAll('.thumbnail-wrapper').forEach(el => el.classList.remove('active'));
+                    thumbWrapper.classList.add('active');
+                });
+
+                sidebarContainer.appendChild(thumbWrapper);
+                page.render({ canvasContext: thumbCtx, viewport: thumbViewport });
+                await new Promise(resolve => setTimeout(resolve, 10));
+            }
             
-            const pdfDoc = await pdfjsLib.getDocument({ data: pdfDataBinary }).promise;
-            
-            const canvasContainer = document.getElementById('pdf-canvas-container');
-            
-            await renderAndAppendPage(pdfDoc, 1, canvasContainer);
-            
-            renderRemainingPages(pdfDoc, canvasContainer);
+            if (statusEl) statusEl.textContent = `${pdfDoc.numPages} Pages`;
+        }
 
-        } catch (err) {
-            hideLoadingPopup();
-            alert("Could not load PDF file: " + err.message);
-            console.error("PDF Load Error:", err);
-        }
-    }
-
-    async function renderAndAppendPage(pdfDoc, pageNum, container) {
-        const page = await pdfDoc.getPage(pageNum);
-        const viewport = page.getViewport({ scale: 1.8 });
-        const canvas = document.createElement('canvas');
-        canvas.className = 'pdf-page-canvas';
-        const ctx = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-        container.appendChild(canvas);
-    }
-    
-    async function renderRemainingPages(pdfDoc, container) {
-        const statusEl = document.getElementById('page-render-status');
-        for (let pageNum = 2; pageNum <= pdfDoc.numPages; pageNum++) {
-            if (statusEl) statusEl.textContent = `Loading page ${pageNum} of ${pdfDoc.numPages}...`;
-            await renderAndAppendPage(pdfDoc, pageNum, container);
-            await new Promise(resolve => setTimeout(resolve, 10)); 
-        }
-        if (statusEl) {
-            statusEl.textContent = "All pages loaded.";
-            setTimeout(() => { statusEl.textContent = ''; }, 2000);
-        }
-    }
-</script>
-
-<script>
-    // Disable right-click
-    document.addEventListener('contextmenu', event => event.preventDefault());
-
-    // Disable specific keyboard shortcuts
-    document.addEventListener('keydown', function(e) {
-        // Block F12
-        if (e.key === "F12") {
-            e.preventDefault();
-        }
-        // Block Ctrl+Shift+I (Developer Tools)
-        if (e.ctrlKey && e.shiftKey && e.key === 'I') {
-            e.preventDefault();
-        }
-        // Block Ctrl+Shift+J (Console)
-        if (e.ctrlKey && e.shiftKey && e.key === 'J') {
-            e.preventDefault();
-        }
-        // Block Ctrl+U (View Source)
-        if (e.ctrlKey && e.key === 'u') {
-            e.preventDefault();
-        }
-        // Block Ctrl+S (Save)
-        if (e.ctrlKey && e.key === 's') {
-            e.preventDefault();
-        }
-        // Block Ctrl+P (Print)
-        if (e.ctrlKey && e.key === 'p') {
-            e.preventDefault();
-        }
-    });
-</script>
+        // Global Security
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.addEventListener('keydown', function(e) {
+            if (e.key === "F12" || (e.ctrlKey && (e.key === 'p' || e.key === 's' || e.key === 'u'))) {
+                e.preventDefault();
+            }
+        });
+    </script>
 
 </body>
 </html>
