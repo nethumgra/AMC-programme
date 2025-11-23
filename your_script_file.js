@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, sendEmailVerification, signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, sendEmailVerification, signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyASA8KptfOy9pezf3QCoWHt9Bg28yN3HsM",
@@ -15,21 +15,30 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+// Session Persistence
+setPersistence(auth, browserLocalPersistence)
+    .then(() => console.log("Session persistence set to LOCAL"))
+    .catch((error) => console.error("Error setting persistence:", error));
+
 const mainContainer = document.getElementById('mainContainer');
 let currentPlaylist = [];
-let player; // This will be your YouTube Player
-let testVideoPlayer; // For direct <video> tag testing (if you uncommented it in HTML)
+let player; 
+let testVideoPlayer;
+
 let progressInterval;
 let toastTimeout;
-let idmDetectionInterval; // New variable for IDM detection interval
+let idmDetectionInterval; 
 
+// --- NEW TIMEOUT VARIABLES ---
 let activityTimer;
-const INACTIVITY_TIMEOUT = 30 * 1000; // 30 seconds
+let warningCountdownTimer;
+const INACTIVITY_LIMIT = 15 * 60 * 1000; // විනාඩි 15 කට පස්සේ Warning එක එනවා
+const WARNING_DURATION = 60 * 1000;      // Warning එක ඇවිත් තත්පර 60ක් දෙනවා Click කරන්න
 
-// NEW: Variables for Safe Zone Logic
+// --- Safe Zone Variables ---
 let isSafeZoneActive = false;
 let safeZoneActivationTimeout;
-const SAFE_ZONE_ACTIVATION_DELAY = 20 * 1000; // 20 seconds
+const SAFE_ZONE_ACTIVATION_DELAY = 15 * 60 * 1000; // විනාඩි 15ක් යනකම් Safe Zone Active වෙන්නේ නෑ
 
 function showPopup(title, message, onOk) {
     const template = document.getElementById('popupTemplate').content.cloneNode(true);
@@ -43,11 +52,77 @@ function showPopup(title, message, onOk) {
     document.body.appendChild(popup);
 }
 
+// --- NEW WARNING POPUP FUNCTION ---
+function showInactivityWarning() {
+    // වීඩියෝ එක Play වෙනවා නම් Warning එක පෙන්නන්න එපා, Timer එක Reset කරන්න
+    if (player && player.getPlayerState() === YT.PlayerState.PLAYING) {
+        console.log("Video is playing. Resetting timer automatically.");
+        resetActivityTimer();
+        return;
+    }
+
+    // වීඩියෝ එක Play වෙන්නේ නැත්නම් Warning එක පෙන්නන්න
+    const warningDiv = document.createElement('div');
+    warningDiv.id = 'inactivity-warning-popup';
+    warningDiv.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8); z-index: 99999; display: flex;
+        justify-content: center; align-items: center; flex-direction: column;
+        color: white; text-align: center;
+    `;
+    
+    warningDiv.innerHTML = `
+        <div style="background: #1f2937; padding: 30px; border-radius: 15px; border: 1px solid #7c3aed; max-width: 400px;">
+            <i class="fas fa-bed" style="font-size: 3rem; color: #f59e0b; margin-bottom: 20px;"></i>
+            <h2 style="margin-bottom: 10px;">Are you still watching?</h2>
+            <p>You have been inactive for a while.</p>
+            <p style="font-size: 0.9rem; color: #d1d5db; margin: 15px 0;">Logging out in <span id="logout-countdown" style="font-weight:bold; color:#ef4444;">60</span> seconds...</p>
+            <button id="stay-logged-in-btn" style="background: #7c3aed; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem;">
+                I'm Still Here
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(warningDiv);
+
+    let timeLeft = 60;
+    const countdownEl = document.getElementById('logout-countdown');
+    
+    // තත්පරෙන් තත්පරේ අඩු වෙන විදිය (Countdown)
+    const countdownInterval = setInterval(() => {
+        timeLeft--;
+        if(countdownEl) countdownEl.innerText = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(countdownInterval);
+        }
+    }, 1000);
+
+    // "I'm Still Here" Button Action
+    document.getElementById('stay-logged-in-btn').addEventListener('click', () => {
+        clearInterval(countdownInterval);
+        clearTimeout(warningCountdownTimer);
+        warningDiv.remove();
+        resetActivityTimer(); // Timer එක ආයේ මුල ඉඳන් පටන් ගන්නවා
+    });
+
+    // තත්පර 60ක් ඇතුලත Click කරේ නැත්නම් Logout වෙනවා
+    warningCountdownTimer = setTimeout(() => {
+        clearInterval(countdownInterval);
+        warningDiv.remove();
+        handleLogout();
+    }, WARNING_DURATION);
+}
+
 function handleLogout() {
-    // NEW: Clear safe zone activation timeout on logout
     clearTimeout(safeZoneActivationTimeout);
-    isSafeZoneActive = false; // Reset safe zone status
-    // Hide any active overlays when logging out
+    clearTimeout(activityTimer); // Clear activity timer
+    clearTimeout(warningCountdownTimer); // Clear warning timer
+    
+    // Remove warning popup if exists
+    const existingWarning = document.getElementById('inactivity-warning-popup');
+    if(existingWarning) existingWarning.remove();
+
+    isSafeZoneActive = false; 
     const mouseOutOverlay = document.getElementById('mouse-out-overlay');
     if (mouseOutOverlay) {
         mouseOutOverlay.classList.remove('show');
@@ -62,11 +137,15 @@ function handleLogout() {
 
 function resetActivityTimer() {
     clearTimeout(activityTimer);
+    clearTimeout(warningCountdownTimer);
+    
+    // Remove warning popup if user moves mouse just before it appears
+    const existingWarning = document.getElementById('inactivity-warning-popup');
+    if(existingWarning) existingWarning.remove();
+
     if (auth.currentUser && mainContainer.classList.contains('video-view-container')) {
-        activityTimer = setTimeout(() => {
-            console.log("User inactive for too long, logging out...");
-            handleLogout();
-        }, INACTIVITY_TIMEOUT);
+        // කාලය ඉවර වුනාම කෙලින්ම Logout නොවී Warning එක එන Function එක කෝල් කරනවා
+        activityTimer = setTimeout(showInactivityWarning, INACTIVITY_LIMIT);
     }
 }
 
@@ -80,6 +159,7 @@ function setupActivityListeners() {
 
 function removeActivityListeners() {
     clearTimeout(activityTimer);
+    clearTimeout(warningCountdownTimer);
     document.removeEventListener('mousemove', resetActivityTimer);
     document.removeEventListener('keydown', resetActivityTimer);
     document.removeEventListener('click', resetActivityTimer);
@@ -88,20 +168,15 @@ function removeActivityListeners() {
 
 // --- IDM Detection Function ---
 function checkForIDMAttribute() {
-    // This function assumes you are testing with a direct <video> tag with id="testVideoPlayer"
-    // If you are only using YouTube iframe, the IDM detection might not work this way.
-    const videoElement = document.getElementById('testVideoPlayer'); // Check your HTML for this element
+    const videoElement = document.getElementById('testVideoPlayer'); 
     const downloadBlockedOverlay = document.getElementById('download-blocked-overlay');
 
     if (videoElement && videoElement.hasAttribute('idm_id')) {
-        console.warn("IDM attribute detected on <video> tag!");
-        if (testVideoPlayer) testVideoPlayer.pause(); // Pause direct video
+        if (testVideoPlayer) testVideoPlayer.pause(); 
         if (player && typeof player.pauseVideo === 'function') {
-            player.pauseVideo(); // Attempt to pause YouTube player if active
+            player.pauseVideo(); 
         }
         if (downloadBlockedOverlay) downloadBlockedOverlay.style.display = 'flex';
-        // You might want to clearInterval(idmDetectionInterval) here if you want to stop checking
-        // once IDM is detected until the page is refreshed/reloaded.
         return true;
     } else if (downloadBlockedOverlay) {
         downloadBlockedOverlay.style.display = 'none';
@@ -110,19 +185,15 @@ function checkForIDMAttribute() {
 }
 
 function setupIDMDetection() {
-    clearInterval(idmDetectionInterval); // Clear any previous interval
-    // Only set up IDM detection if we are in the video view and 'testVideoPlayer' exists (for direct video testing)
+    clearInterval(idmDetectionInterval); 
     if (document.getElementById('testVideoPlayer') && mainContainer.classList.contains('video-view-container')) {
         idmDetectionInterval = setInterval(() => {
             checkForIDMAttribute();
-        }, 1000); // Check every second
+        }, 1000); 
     } else {
-        // If not in video view or no testVideoPlayer, ensure interval is cleared
         clearInterval(idmDetectionInterval);
     }
 }
-// --- End IDM Detection Function ---
-
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -134,7 +205,7 @@ onAuthStateChanged(auth, (user) => {
         } else {
             showPopup(
                 "Email Not Verified",
-                "Your email address has not been verified. Please check your inbox (and spam folder) for a verification link. You will be logged out.",
+                "Your email address has not been verified.",
                 () => {
                     signOut(auth);
                     showView('login');
@@ -159,36 +230,31 @@ async function showView(viewName) {
     attachEventListeners(viewName);
 
     if (viewName === 'video') {
-        // NEW: Reset safe zone state and start activation timer
         isSafeZoneActive = false;
         const safeZoneElement = document.getElementById('safe-interaction-zone');
         if (safeZoneElement) {
-            safeZoneElement.classList.remove('active'); // Ensure it's not active initially
+            safeZoneElement.classList.remove('active'); 
         }
-        clearTimeout(safeZoneActivationTimeout); // Clear any previous timer
+        clearTimeout(safeZoneActivationTimeout); 
+        
+        // 15 Minutes Delay for Safe Zone
         safeZoneActivationTimeout = setTimeout(() => {
             isSafeZoneActive = true;
-            console.log("Safe interaction zone is now ACTIVE!");
             if (safeZoneElement) {
-                safeZoneElement.classList.add('active'); // Activate mouse event capturing
+                safeZoneElement.classList.add('active'); 
             }
         }, SAFE_ZONE_ACTIVATION_DELAY);
 
         if (typeof YT !== 'undefined' && YT.Player) {
             onYouTubeIframeAPIReady();
-        } else {
-            // If YT object is not ready, this will be called when the API loads
-            // Make sure the YouTube Iframe API script is loaded globally in your HTML
-            // E.g., <script src="https://www.youtube.com/iframe_api"></script>
-        }
+        } 
         renderPlaylist(currentPlaylist);
         populateWatermark('#video-watermark');
         resetActivityTimer();
-        setupIDMDetection(); // Start IDM detection when video view loads
+        setupIDMDetection(); 
     } else {
         removeActivityListeners();
-        clearInterval(idmDetectionInterval); // Stop IDM detection when leaving video view
-        // NEW: Clear safe zone timer when leaving video view
+        clearInterval(idmDetectionInterval); 
         clearTimeout(safeZoneActivationTimeout);
         isSafeZoneActive = false;
     }
@@ -213,7 +279,6 @@ function attachEventListeners(viewName) {
     } else if (viewName === 'video') {
         mainContainer.querySelector('.logout-button').addEventListener('click', handleLogout);
         
-        // Ensure player and controls exist before attaching listeners
         const playPauseBtn = mainContainer.querySelector('#play-pause-btn');
         const fullscreenBtn = mainContainer.querySelector('#fullscreen-btn');
         const progressContainer = mainContainer.querySelector('#progress-container');
@@ -243,69 +308,51 @@ function attachEventListeners(viewName) {
             });
         }
 
-        // --- NEW: Safe Interaction Zone Mouse Listeners ---
+        // --- Safe Interaction Zone ---
         const safeZoneElement = mainContainer.querySelector('#safe-interaction-zone');
         const mouseOutOverlay = mainContainer.querySelector('#mouse-out-overlay');
 
         if (safeZoneElement && mouseOutOverlay) {
             safeZoneElement.addEventListener('mouseleave', () => {
-                // Only act if the safe zone is active (after 20 seconds)
                 if (isSafeZoneActive) {
-                    console.log("Mouse left safe interaction zone. Redirecting to login!");
+                    // Safe zone triggered: Pause video and show overlay, but DO NOT logout immediately
                     if (player && typeof player.pauseVideo === 'function') {
-                        player.pauseVideo(); // Pause video before redirecting
+                        player.pauseVideo(); 
                     }
-                    if (testVideoPlayer) { // Pause direct video if present
-                        testVideoPlayer.pause();
-                    }
-                    mouseOutOverlay.classList.add('show'); // Show message
-                    
-                    // Immediately redirect to login page after a short delay to show message
-                    setTimeout(() => {
-                        handleLogout(); // This will show the login page
-                    }, 500); // 0.5 seconds delay to allow message to be seen
+                    mouseOutOverlay.classList.add('show'); 
                 }
             });
 
-            // When mouse re-enters, hide the overlay (even if not active yet)
             safeZoneElement.addEventListener('mouseenter', () => {
                 if (mouseOutOverlay) {
                     mouseOutOverlay.classList.remove('show');
                 }
             });
         }
-        // --- END NEW: Safe Interaction Zone Mouse Listeners ---
 
+        // --- VISIBILITY CHANGE (TAB SWITCH) ---
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                if (auth.currentUser) {
-                    console.log(`[${new Date().toLocaleTimeString()}] Tab is hidden, attempting to log out user: ${auth.currentUser.email}`);
-                    handleLogout();
-                } else {
-                    console.log(`[${new Date().toLocaleTimeString()}] Tab is hidden, but no active user found to log out.`);
+                // Tab switch triggered: Pause video only, DO NOT logout immediately
+                console.log("Tab hidden. Pausing video.");
+                if (player && typeof player.pauseVideo === 'function') {
+                    player.pauseVideo(); 
                 }
             } else {
-                console.log(`[${new Date().toLocaleTimeString()}] Tab is visible again.`);
                 resetActivityTimer();
             }
         });
         
-        // Window blur/focus listeners
         window.addEventListener('blur', () => {
-            console.log(`[${new Date().toLocaleTimeString()}] Browser window lost focus.`);
             if (player && typeof player.pauseVideo === 'function') {
                 player.pauseVideo();
             }
-            if (testVideoPlayer) { // Pause direct video if present
-                testVideoPlayer.pause();
-            }
-            if (mouseOutOverlay) { // Show the overlay if window blurs
+            if (mouseOutOverlay) { 
                  mouseOutOverlay.classList.add('show');
             }
         });
 
         window.addEventListener('focus', () => {
-            console.log(`[${new Date().toLocaleTimeString()}] Browser window gained focus.`);
             if (mouseOutOverlay) {
                 mouseOutOverlay.classList.remove('show');
             }
@@ -323,7 +370,7 @@ async function handleLogin(e) {
     submitBtn.disabled = true;
     messageEl.textContent = "Logging in...";
     try {
-        await setPersistence(auth, browserSessionPersistence); 
+        await setPersistence(auth, browserLocalPersistence); 
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
         messageEl.textContent = 'Invalid email or password.';
@@ -346,7 +393,7 @@ async function handleRegister(e) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await setDoc(doc(db, "users", userCredential.user.uid), { username, email, mobile, createdAt: new Date() });
         await sendEmailVerification(userCredential.user);
-        showPopup("Registration Successful!", "A verification link has been sent to your email. Please check your inbox (and spam folder) to activate your account.", () => showView('login'));
+        showPopup("Registration Successful!", "A verification link has been sent to your email.", () => showView('login'));
     } catch (error) {
         messageEl.textContent = error.message;
     } finally {
@@ -370,7 +417,6 @@ async function populateWatermark(containerSelector) {
     }
 }
 
-// Correct YouTube Iframe API loading. This function is called automatically by YouTube.
 window.onYouTubeIframeAPIReady = function() {
     if (document.getElementById('player')) {
         player = new YT.Player('player', {
@@ -380,11 +426,7 @@ window.onYouTubeIframeAPIReady = function() {
             events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange }
         });
     }
-    // If you are using a direct <video> tag for IDM testing, uncomment this line:
     testVideoPlayer = document.getElementById('testVideoPlayer');
-    // if (testVideoPlayer) {
-    //     // Optional: Listen to its events if needed for testing
-    // }
 }
 
 function onPlayerReady(event) {
@@ -402,9 +444,13 @@ function onPlayerStateChange(event) {
         videoWrapper.classList.add('playing');
         playPauseBtnIcon.className = 'fas fa-pause';
         progressInterval = setInterval(updateProgressBar, 250);
+        
+        // --- NEW: Reset Timer when video starts playing ---
+        resetActivityTimer(); 
     } else {
         videoWrapper.classList.remove('playing');
         playPauseBtnIcon.className = 'fas fa-play';
+        resetActivityTimer(); // Reset timer on pause too
     }
 }
 
@@ -451,11 +497,9 @@ onSnapshot(videosQuery, (snapshot) => {
     }
 });
 
-// --- UPDATED: Disable ALL keyboard shortcuts except for input fields ---
 document.addEventListener('keydown', e => { 
-    if (document.getElementById('video-wrapper')) { // Only apply if on the video page
+    if (document.getElementById('video-wrapper')) { 
         const activeElement = document.activeElement;
-        // Allow typing in input or textarea elements (e.g., search bar)
         if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
             return; 
         }
@@ -469,15 +513,9 @@ document.addEventListener('keydown', e => {
         }
     }
 });
-// --- END UPDATED keydown listener ---
 
-// --- Ensure right-click is disabled ---
 document.addEventListener('contextmenu', e => e.preventDefault());
-// --- End right-click disable ---
 
-// Initial view load based on current auth state
 if (!auth.currentUser) {
     showView('login');
-} else {
-    // This will be handled by the onAuthStateChanged listener already defined above
 }
