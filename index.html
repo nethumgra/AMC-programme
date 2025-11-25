@@ -336,14 +336,17 @@
         let currentPlaylist = [];
         let player = null;
         let updateTimer;
-        let activityTimer;
         let isDragging = false;
         let isLocked = false;
         
         // Flag to prevent Auth Listener interference during registration
         let isRegistrationProcess = false;
         
-        const INACTIVITY_TIMEOUT = 30 * 1000;
+        // --- NEW INACTIVITY TIMERS ---
+        const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 Minutes
+        const WARNING_DURATION = 60 * 1000;       // 1 Minute Warning
+        let activityTimer;
+        let warningCountdownTimer;
 
         // --- HELPER: Extract Video ID from URL ---
         function extractVideoId(url) {
@@ -415,16 +418,101 @@
         }
 
         function handleLogout() {
+            // Remove inactivity popup if exists
+            const existingPopup = document.getElementById('inactivity-popup');
+            if (existingPopup) existingPopup.remove();
+            clearTimeout(activityTimer);
+            clearTimeout(warningCountdownTimer);
+
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             document.documentElement.removeEventListener('mouseleave', handleMouseLeave);
             player = null;
             signOut(auth).catch(error => console.error(error));
         }
 
+        // --- NEW: INACTIVITY WARNING FUNCTION ---
+        function showInactivityWarning() {
+            // 1. Pause Video
+            if (player && typeof player.pauseVideo === 'function') {
+                player.pauseVideo();
+            }
+
+            // 2. Remove existing popup if any
+            const existingPopup = document.getElementById('inactivity-popup');
+            if (existingPopup) existingPopup.remove();
+
+            // 3. Create Popup HTML
+            const popupHTML = `
+                <div id="inactivity-popup" style="
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(0,0,0,0.85); z-index: 10000;
+                    display: flex; flex-direction: column; align-items: center; justify-content: center;
+                    color: white; font-family: 'Inter', sans-serif; animation: fadeIn 0.3s;">
+                    
+                    <div style="background: #1f2937; padding: 40px; border-radius: 20px; text-align: center; border: 1px solid #374151; max-width: 400px;">
+                        <i class="fas fa-bed" style="font-size: 4rem; color: #f59e0b; margin-bottom: 20px;"></i>
+                        <h2 style="margin-bottom: 10px; font-size: 1.5rem;">Are you still watching?</h2>
+                        <p style="color: #9ca3af; margin-bottom: 30px;">Video paused due to inactivity.</p>
+                        
+                        <button id="resume-btn" style="
+                            background: #7c3aed; color: white; border: none; padding: 12px 30px;
+                            font-size: 1rem; font-weight: 600; border-radius: 10px; cursor: pointer;
+                            transition: 0.2s;">
+                            Yes, I'm Here
+                        </button>
+                        
+                        <p style="margin-top: 20px; font-size: 0.8rem; color: #ef4444;">
+                            Auto logging out in <span id="auto-logout-timer">60</span>s
+                        </p>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', popupHTML);
+
+            // 4. Countdown Logic
+            let secondsLeft = 60;
+            const timerSpan = document.getElementById('auto-logout-timer');
+            
+            const countdownInterval = setInterval(() => {
+                secondsLeft--;
+                if(timerSpan) timerSpan.innerText = secondsLeft;
+                if(secondsLeft <= 0) clearInterval(countdownInterval);
+            }, 1000);
+
+            // 5. Force Logout Timeout
+            warningCountdownTimer = setTimeout(() => {
+                clearInterval(countdownInterval);
+                document.getElementById('inactivity-popup')?.remove();
+                handleLogout();
+            }, WARNING_DURATION);
+
+            // 6. Resume Button Logic
+            document.getElementById('resume-btn').addEventListener('click', () => {
+                clearTimeout(warningCountdownTimer);
+                clearInterval(countdownInterval);
+                document.getElementById('inactivity-popup').remove();
+                
+                if (player && typeof player.playVideo === 'function') {
+                    player.playVideo();
+                }
+                
+                // Restart Main Timer
+                if (auth.currentUser && mainContainer.classList.contains('video-view-container')) {
+                    activityTimer = setTimeout(showInactivityWarning, INACTIVITY_TIMEOUT);
+                }
+            });
+        }
+
         function resetActivityTimer() {
+            // IMPORTANT: If popup is already showing, ignore mouse moves (User MUST click button)
+            if (document.getElementById('inactivity-popup')) return;
+
             clearTimeout(activityTimer);
+            clearTimeout(warningCountdownTimer);
+            
             if (auth.currentUser && mainContainer.classList.contains('video-view-container')) {
-                activityTimer = setTimeout(() => { handleLogout(); }, INACTIVITY_TIMEOUT);
+                activityTimer = setTimeout(showInactivityWarning, INACTIVITY_TIMEOUT);
             }
         }
 
