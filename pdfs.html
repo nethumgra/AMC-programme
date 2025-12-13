@@ -143,25 +143,27 @@
         }
 
         /* --- PDF List Styling --- */
-        #pdf-list {
-            list-style: none;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .material-card {
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
+       /* පරණ #pdf-list එක මකලා මේක දාන්න */
+#pdf-list {
+    list-style: none;
+    display: flex;              /* Grid වෙනුවට Flex පාවිච්චි කරනවා */
+    flex-direction: column;     /* පේලියට යටින් යට එන්න */
+    gap: 15px;                  /* කාඩ් අතර පරතරය */
+    padding-bottom: 50px;       
+}/* පරණ .material-card එක මකලා මේක දාන්න */
+.material-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;                /* Screen එකේ සම්පූර්ණ පළල ගන්න */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
 
         .material-card:hover {
             border-color: var(--primary-color);
@@ -186,15 +188,20 @@
             overflow: hidden;
         }
 
-        .material-title {
-            font-weight: 600;
-            color: var(--text-main);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-bottom: 4px;
-        }
-
+       /* පරණ .material-title එක මකලා මේක දාන්න */
+.material-title {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 1.05rem;
+    
+    /* මේ යට තියෙන ටික අයින් කරපු නිසා දැන් නම සම්පූර්ණයෙන්ම පේනවා */
+    /* white-space: nowrap;  <-- මකලා */
+    /* overflow: hidden;     <-- මකලා */
+    /* text-overflow: ellipsis; <-- මකලා */
+    
+    margin-bottom: 4px;
+    line-height: 1.4; /* පේළි අතර පරතරය */
+}
         .material-type {
             font-size: 0.8rem;
             color: var(--text-light);
@@ -284,22 +291,25 @@
         .page-label { font-size: 0.8rem; color: var(--text-light); margin-top: 5px; }
 
         /* Main Canvas Area */
-        #pdf-viewer-content {
-            flex: 1;
-            overflow: auto;
-            padding: 30px;
-            display: flex;
-            justify-content: center;
-            position: relative;
-            z-index: 2;
-        }
+       /* Main Canvas Area (Scrollable Parent) */
+#pdf-viewer-content {
+    flex: 1;
+    overflow: auto;       /* Scrollbars එන්න ඕන වුනාම එනවා */
+    padding: 30px;
+    display: block;       /* Flex අයින් කරලා Block දානවා (මෙකෙන් තමයි වම් පැත්තට යට වෙන එක නවතින්නේ) */
+    position: relative;
+    z-index: 2;
+    text-align: center;   /* PDF එක පොඩි නම් මැදට ගන්න */
+}
 
-        #pdf-canvas-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            position: relative;
-        }
+/* Inner Container holding the pages */
+#pdf-canvas-container {
+    display: inline-flex; /* content එකේ size එකටම width එක හැදෙන්න */
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+    margin: 0 auto;       /* ලොකු වුනත් පොඩි වුනත් මැදටම එන්න */
+}
 
         .pdf-page-canvas {
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
@@ -582,14 +592,32 @@
             document.documentElement.addEventListener('mouseleave', handleMouseLeave);
         }
 
-        // --- AUTH & LOGIC ---
-        onAuthStateChanged(auth, (user) => {
-            if (!user || !user.emailVerified) {
-                window.location.href = 'index.html';
-            } else {
+       // --- AUTH & LOGIC ---
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        // කෙලින්ම emailVerified බලන්නේ නැතුව, DB එකෙන් User Approved ද කියල බලමු
+        try {
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            
+            if (userDoc.exists() && userDoc.data().isApproved === true) {
+                // Admin approve කරලා නම් විතරක් access දෙන්න
                 setupSecurity();
+                // Watermark එකත් මෙතනම load කරගන්න පුළුවන්
+                populateWatermark('#pdf-watermark'); 
+            } else {
+                // User හිටියට approve කරලා නැත්නම් එලියට දානවා
+                alert("Your account is pending approval or suspended.");
+                window.location.href = 'index.html';
             }
-        });
+        } catch (error) {
+            console.error("Error checking user status:", error);
+            window.location.href = 'index.html';
+        }
+    } else {
+        // User කෙනෙක් login වෙලා නැත්නම් එලියට දානවා
+        window.location.href = 'index.html';
+    }
+});
 
         document.querySelector('.btn-logout').addEventListener('click', () => {
             signOut(auth).then(() => window.location.href = 'index.html');

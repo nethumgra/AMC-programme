@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#ffffff">
     <title>AMC BRIDGE</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #7c3aed;
@@ -15,9 +16,11 @@
             --text-main: #1f2937;
             --text-light: #6b7280;
             --border-color: #e5e7eb;
+            --bottom-nav-height: 80px; /* Increased height for better look */
+            --header-height: 65px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
         body {
             font-family: 'Inter', sans-serif;
@@ -25,62 +28,127 @@
             color: var(--text-main);
             height: 100vh;
             overflow: hidden;
+            overscroll-behavior-y: none;
         }
 
-        /* --- Auth Styles --- */
-        .auth-wrapper { display: flex; width: 100%; height: 100vh; align-items: center; justify-content: center; background: #f9fafb; }
-        .auth-card { display: flex; width: 900px; height: 600px; background: white; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.05); overflow: hidden; }
-        .auth-left { flex: 1; background: linear-gradient(135deg, #7c3aed, #4c1d95); color: white; padding: 60px; display: flex; flex-direction: column; justify-content: center; position: relative; }
+        /* --- Scrollbar Styling --- */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+
+        /* --- Auth Styles (Responsive) --- */
+        .auth-wrapper { 
+            display: flex; width: 100%; height: 100vh; 
+            align-items: center; justify-content: center; 
+            background: #f9fafb; 
+            overflow-y: auto;
+        }
+        
+        .auth-card { 
+            display: flex; width: 900px; height: 600px; 
+            background: white; border-radius: 24px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05); 
+            overflow: hidden; 
+        }
+        
+        .auth-left { 
+            flex: 1; 
+            background: linear-gradient(135deg, #7c3aed, #4c1d95); 
+            color: white; padding: 60px; 
+            display: flex; flex-direction: column; justify-content: center; 
+            position: relative; 
+        }
         .auth-left::after { content: ''; position: absolute; bottom: -50px; right: -50px; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%; }
-        .auth-left h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 15px; }
+        .auth-left h1 { font-family: 'Outfit', sans-serif; font-size: 2.5rem; font-weight: 800; margin-bottom: 15px; letter-spacing: 1px; }
         .auth-left p { font-size: 1rem; opacity: 0.9; line-height: 1.6; }
-        .auth-right { flex: 1; padding: 60px; display: flex; flex-direction: column; justify-content: center; }
-        .auth-right h2 { color: var(--text-main); font-size: 1.8rem; font-weight: 700; margin-bottom: 30px; }
+        
+        .auth-right { 
+            flex: 1; padding: 60px; 
+            display: flex; flex-direction: column; justify-content: center; 
+            overflow-y: auto;
+        }
+        .auth-right h2 { color: var(--text-main); font-size: 1.8rem; font-weight: 700; margin-bottom: 30px; font-family: 'Outfit', sans-serif; }
 
         .input-group { margin-bottom: 20px; position: relative; }
         .input-group label { display: block; font-size: 0.9rem; color: var(--text-main); margin-bottom: 8px; font-weight: 500; }
-        .input-group input { width: 100%; padding: 14px 16px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 0.95rem; transition: 0.3s; outline: none; }
-        .input-group input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1); }
-        .password-toggle { position: absolute; right: 16px; top: 42px; color: var(--text-light); cursor: pointer; }
+        .input-group input { width: 100%; padding: 16px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 1rem; transition: 0.3s; outline: none; background: #f9fafb; }
+        .input-group input:focus { border-color: var(--primary-color); background: white; box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1); }
+        .password-toggle { position: absolute; right: 16px; top: 46px; color: var(--text-light); cursor: pointer; padding: 5px; font-size: 1.1rem; }
 
-        .auth-btn { width: 100%; padding: 14px; background-color: var(--primary-color); color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 10px; transition: 0.2s; }
-        .auth-btn:hover { background-color: var(--primary-hover); }
-        .switch-text { margin-top: 20px; text-align: center; font-size: 0.9rem; color: var(--text-light); }
+        .auth-btn { width: 100%; padding: 16px; background-color: var(--primary-color); color: white; border: none; border-radius: 12px; font-size: 1.05rem; font-weight: 600; cursor: pointer; margin-top: 10px; transition: 0.2s; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3); }
+        .auth-btn:active { transform: scale(0.98); }
+        
+        .switch-text { margin-top: 25px; text-align: center; font-size: 0.95rem; color: var(--text-light); }
         .switch-text a { color: var(--primary-color); text-decoration: none; font-weight: 600; }
 
         /* --- Dashboard Styles --- */
-        .app-container { display: flex; height: 100vh; width: 100%; }
-        .sidebar-nav { width: 260px; background: white; border-right: 1px solid var(--border-color); padding: 20px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
-        .brand { font-size: 1.4rem; font-weight: 800; color: var(--primary-color); display: flex; align-items: center; gap: 10px; margin-bottom: 30px; padding-left: 10px; }
+        .app-container { display: flex; height: 100vh; width: 100%; position: relative; overflow: hidden; }
+        
+        /* Desktop Sidebar */
+        .sidebar-nav { 
+            width: 260px; background: white; border-right: 1px solid var(--border-color); 
+            padding: 20px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; 
+        }
+        .brand { font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--primary-color); display: flex; align-items: center; gap: 10px; margin-bottom: 30px; padding-left: 10px; letter-spacing: -0.5px; }
         .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; color: var(--text-light); text-decoration: none; font-weight: 500; transition: 0.2s; }
         .nav-item:hover { background: #f5f3ff; color: var(--primary-color); }
         .nav-item.active { background: #f5f3ff; color: var(--primary-color); font-weight: 600; }
         
-        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .top-header { height: 70px; background: white; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; background: #fff; }
+        
+        /* Desktop Header */
+        .top-header { height: 70px; background: white; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; flex-shrink: 0; }
         .breadcrumbs { font-size: 0.9rem; color: var(--text-light); }
-        .breadcrumbs span { color: var(--text-main); font-weight: 500; }
         .user-actions { display: flex; gap: 15px; align-items: center; }
         .btn-outline { padding: 8px 16px; border: 1px solid var(--border-color); background: white; border-radius: 8px; cursor: pointer; font-weight: 500; color: var(--text-main); text-decoration: none; display: inline-block; }
         .btn-logout { background: #fee2e2; color: #991b1b; border: none; }
 
+        /* --- Mobile Header (Professional Look) --- */
+        .mobile-header {
+            display: none;
+            height: var(--header-height);
+            background: white;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            padding-top: env(safe-area-inset-top);
+            height: calc(var(--header-height) + env(safe-area-inset-top));
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+        }
+        .mobile-brand { 
+            font-family: 'Outfit', sans-serif; /* NEW PROFESSIONAL FONT */
+            font-weight: 800; 
+            color: var(--primary-color); 
+            font-size: 1.3rem;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .mobile-brand i { font-size: 1.5rem; }
+        .mobile-user { width: 38px; height: 38px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text-main); font-size: 1.1rem; }
+
         .course-layout { flex: 1; display: flex; padding: 30px; gap: 30px; overflow: hidden; }
         .video-column { flex: 3; display: flex; flex-direction: column; overflow-y: auto; padding-right: 10px; }
-        .playlist-column { flex: 1.2; display: flex; flex-direction: column; background: white; border-radius: 20px; border: 1px solid var(--border-color); overflow: hidden; min-width: 300px; }
+        .playlist-column { flex: 1.2; display: flex; flex-direction: column; background: white; border-radius: 20px; border: 1px solid var(--border-color); overflow: hidden; min-width: 300px; height: 100%; }
 
         /* --- Video Player --- */
-        .video-card { width: 100%; background: black; border-radius: 20px; overflow: hidden; position: relative; aspect-ratio: 16/9; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        .video-card { width: 100%; background: black; border-radius: 20px; overflow: hidden; position: relative; aspect-ratio: 16/9; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 25px; flex-shrink: 0; }
         #player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         .click-blocker { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: 5; }
         
         .custom-controls { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); padding: 20px 20px 15px 20px; display: flex; align-items: center; gap: 15px; z-index: 20; }
-        .control-btn { background: none; border: none; color: white; cursor: pointer; font-size: 1.1rem; }
+        .control-btn { background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem; padding: 5px; }
         .time-display { color: white; font-size: 0.85rem; font-family: monospace; min-width: 90px; text-align: center; }
         .seek-bar { flex: 1; cursor: pointer; -webkit-appearance: none; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; }
-        .seek-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: white; border-radius: 50%; }
+        .seek-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: white; border-radius: 50%; }
         .speed-select { background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 6px; padding: 4px 8px; font-size: 0.8rem; cursor: pointer; outline: none; }
 
-        /* --- Watermark Styles (Gray & Clean) --- */
+        /* --- Watermark Styles --- */
         @keyframes pan-grid { 0% { transform: translate(0, 0); } 50% { transform: translate(-40px, -20px); } 100% { transform: translate(0, 0); } }
         .full-coverage-watermark { position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; z-index: 3; pointer-events: none; display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: center; overflow: hidden; animation: pan-grid 25s linear infinite; }
         .watermark-item { color: rgba(255, 255, 255, 0.3); font-size: 16px; font-weight: 400; padding: 50px; transform: rotate(-30deg); white-space: nowrap; text-shadow: none; }
@@ -90,44 +158,133 @@
         #top-disclaimer { top: 20px; }
         #bottom-disclaimer { bottom: 60px; animation-delay: -12s; }
 
-        .course-info h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 10px; color: var(--text-main); }
+        .course-info h1 { font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800; margin-bottom: 10px; color: var(--text-main); }
         .course-meta { display: flex; gap: 20px; color: var(--text-light); font-size: 0.9rem; margin-bottom: 20px; }
         .course-meta i { color: var(--primary-color); margin-right: 5px; }
         
-        .playlist-header { padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .playlist-header { padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: white; position: sticky; top: 0; z-index: 10; }
         .playlist-header h3 { font-size: 1.1rem; font-weight: 700; }
         #videoPlaylist { list-style: none; overflow-y: auto; flex: 1; }
-        #videoPlaylist li { padding: 15px 20px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; display: flex; align-items: flex-start; gap: 10px; }
+        #videoPlaylist li { padding: 16px 20px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; display: flex; align-items: flex-start; gap: 15px; background: white; }
         #videoPlaylist li:hover { background: #f9fafb; }
-        #videoPlaylist li.active { background: #f5f3ff; border-left: 4px solid var(--primary-color); }
-        .play-icon-wrapper { width: 24px; height: 24px; background: #e5e7eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; flex-shrink: 0; margin-top: 2px; }
-        #videoPlaylist li.active .play-icon-wrapper { background: var(--primary-color); }
-        .video-details strong { display: block; font-size: 0.9rem; margin-bottom: 3px; color: var(--text-main); }
-        .video-details span { font-size: 0.8rem; color: var(--text-light); }
-        .toast-message { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1f2937; color: white; padding: 12px 24px; border-radius: 50px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 1000; font-size: 0.9rem; }
+        #videoPlaylist li.active { background: #f5f3ff; }
+        #videoPlaylist li.active .play-icon-wrapper { background: var(--primary-color); color: white; }
+        #videoPlaylist li.active .video-details strong { color: var(--primary-color); }
+
+        .play-icon-wrapper { width: 32px; height: 32px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #9ca3af; flex-shrink: 0; margin-top: 2px; transition: 0.2s; }
+        .video-details { flex: 1; }
+        .video-details strong { display: block; font-size: 0.95rem; margin-bottom: 4px; color: var(--text-main); line-height: 1.3; }
+        .video-details span { font-size: 0.8rem; color: var(--text-light); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        /* --- Mobile Bottom Nav (Professional App Style) --- */
+        .bottom-nav {
+            display: none;
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+            padding-bottom: env(safe-area-inset-bottom);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(0,0,0,0.08);
+            z-index: 1000;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.05);
+            border-radius: 20px 20px 0 0; /* App-like rounded top */
+        }
+        .bottom-nav-item {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #9ca3af; text-decoration: none; font-size: 0.75rem; font-weight: 600;
+            width: 100%; height: 100%; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .bottom-nav-item i { 
+            font-size: 1.5rem; 
+            margin-bottom: 6px; 
+            transition: 0.3s;
+            padding: 8px;
+            border-radius: 12px;
+        }
+        /* Active State Animation */
+        .bottom-nav-item.active { color: var(--primary-color); }
+        .bottom-nav-item.active i { 
+            background: rgba(124, 58, 237, 0.1); 
+            transform: translateY(-5px);
+        }
+        .bottom-nav-item:active i { transform: scale(0.9); }
+
+        .toast-message { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #1f2937; color: white; padding: 12px 24px; border-radius: 50px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 1000; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .toast-message.show { opacity: 1; }
 
-        /* --- SECURITY & REGISTRATION OVERLAY --- */
+        /* --- SECURITY & OVERLAYS --- */
         .security-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: white; }
         .security-overlay.active { display: flex; }
         .security-icon { font-size: 4rem; color: #ef4444; margin-bottom: 20px; }
         .security-title { font-size: 2rem; font-weight: 800; margin-bottom: 10px; color: #ef4444; text-transform: uppercase; }
-        .security-msg { font-size: 1.1rem; color: #d1d5db; margin-bottom: 30px; max-width: 500px; line-height: 1.5; }
-        
+        .security-msg { font-size: 1.1rem; color: #d1d5db; margin-bottom: 30px; max-width: 500px; line-height: 1.5; padding: 0 20px; }
         .verify-btn { padding: 15px 40px; background: var(--primary-color); color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
-        .verify-btn:hover { background: var(--primary-hover); transform: scale(1.02); }
-
-        /* Loader */
         .loader-circle { border: 4px solid rgba(255,255,255,0.3); border-left-color: var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .success-icon { font-size: 4rem; color: #22c55e; margin-bottom: 15px; display: none; animation: popIn 0.5s ease; }
-        @keyframes popIn { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
 
+        /* --- MOBILE APP TRANSFORMATION --- */
         @media (max-width: 1024px) {
-            .course-layout { flex-direction: column; }
-            .playlist-column { height: 400px; }
-            .sidebar-nav { display: none; } 
+            /* Layout & Auth */
+            .auth-card { width: 100%; height: 100%; border-radius: 0; flex-direction: column; box-shadow: none; }
+            .auth-left { display: none; } 
+            .auth-right { padding: 30px; padding-top: 60px; justify-content: flex-start; background: white; }
+            .auth-right h2 { font-size: 2rem; margin-top: 20px; }
+            
+            /* Main Content Structure */
+            .app-container { flex-direction: column; height: 100vh; }
+            .sidebar-nav { display: none; }
+            .top-header { display: none; }
+            .mobile-header { display: flex; }
+            .bottom-nav { display: flex; }
+            
+            /* Scrolling Content Area */
+            .course-layout { 
+                flex-direction: column; 
+                padding: 0; 
+                gap: 0; 
+                overflow-y: auto; 
+                flex: 1; 
+                padding-bottom: calc(var(--bottom-nav-height) + 20px); /* Clear bottom nav */
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* Video Section (Sticky on Scroll) */
+            .video-column { 
+                flex: none; 
+                padding: 0; 
+                overflow: visible; 
+                position: sticky; 
+                top: 0; 
+                z-index: 10; 
+                background: black;
+            }
+            .course-info { padding: 15px 20px 0 20px; background: white; }
+            .course-info h1 { font-size: 1.3rem; margin-top: 5px; line-height: 1.3; }
+            .course-meta { margin-bottom: 10px; font-size: 0.8rem; padding-left: 20px; }
+            
+            /* Video Player Adjust */
+            .video-card { border-radius: 0; margin-bottom: 0; box-shadow: none; }
+            
+            /* Playlist Section */
+            .playlist-column { 
+                flex: 1; 
+                border-radius: 0; 
+                border: none; 
+                height: auto; 
+                background: white; 
+                padding-top: 10px;
+            }
+            .playlist-header { padding: 15px 20px; background: #f9fafb; border-bottom: 1px solid var(--border-color); border-top: 1px solid var(--border-color); }
+            #videoPlaylist { overflow-y: visible; }
+            
+            /* Custom Controls */
+            .custom-controls { padding: 10px 15px; }
+            .time-display { font-size: 0.75rem; min-width: 80px; }
+            .control-btn { font-size: 1.4rem; padding: 8px; }
         }
     </style>
 </head>
@@ -137,19 +294,18 @@
         <div id="warningContent" style="display: flex; flex-direction: column; align-items: center;">
             <i class="fas fa-exclamation-triangle security-icon"></i>
             <div class="security-title">Security Alert</div>
-            <p class="security-msg">Don't try to screen record or switch tabs. Your activity has been flagged. Please verify you are active to resume.</p>
+            <p class="security-msg">Screen recording and switching tabs are restricted.</p>
             <button id="verifyBtn" class="verify-btn">
-                <i class="fas fa-user-shield"></i> Resume Watching
+                <i class="fas fa-user-shield"></i> Resume
             </button>
         </div>
         <div id="loadingContent" style="display: none; flex-direction: column; align-items: center;">
             <div class="loader-circle"></div>
-            <p style="font-size: 1.1rem; color: #ccc;">Verifying security protocols...</p>
+            <p style="font-size: 1.1rem; color: #ccc;">Verifying...</p>
         </div>
         <div id="successContent" style="display: none; flex-direction: column; align-items: center;">
-            <i class="fas fa-check-circle success-icon" style="display: block;"></i>
+            <i class="fas fa-check-circle success-icon" style="display: block; color: #22c55e; font-size: 4rem; animation: popIn 0.5s ease;"></i>
             <div class="security-title" style="color: #22c55e;">Verified!</div>
-            <p class="security-msg">You can continue watching now.</p>
         </div>
     </div>
 
@@ -158,26 +314,23 @@
             <div class="loader-circle"></div>
             <p style="font-size: 1.1rem; color: #ccc;">Creating Account...</p>
         </div>
-        
         <div id="regSuccess" style="display: none; flex-direction: column; align-items: center;">
              <i class="fas fa-check-circle success-icon" style="display:block; color:#22c55e; font-size:4rem;"></i>
-             <h3 style="color:#22c55e; margin-top:10px;">You're successfully registered!</h3>
+             <h3 style="color:#22c55e; margin-top:10px;">Registered!</h3>
         </div>
-
         <div id="regReview" style="display: none; flex-direction: column; align-items: center; text-align: center; max-width: 500px;">
              <i class="fas fa-user-clock" style="font-size:4rem; color:#f59e0b; margin-bottom:20px;"></i>
-             <h3 style="color:white; margin-bottom:10px; font-size:1.8rem;">Account Under Review</h3>
-             <p style="color:#d1d5db; margin-bottom:30px; font-size:1.1rem; line-height:1.6;">
-                Your account has been created but requires Admin approval to access the courses. 
-                <br>You will be able to login once an administrator approves your request.
+             <h3 style="color:white; margin-bottom:10px; font-size:1.5rem;">Approval Pending</h3>
+             <p style="color:#d1d5db; margin-bottom:30px; font-size:1rem; line-height:1.5; padding:0 20px;">
+                Your account is waiting for admin approval. You will be able to login once approved.
              </p>
-             <button id="regOkBtn" class="verify-btn">OK</button>
+             <button id="regOkBtn" class="verify-btn">Got it</button>
         </div>
     </div>
 
     <div id="mainContainer">
-        <div style="display: flex; justify-content: center; align-items: center; height: 100vh; color: #7c3aed;">
-            <i class="fas fa-circle-notch fa-spin" style="font-size: 2rem;"></i>
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh; color: #7c3aed; background: white;">
+            <i class="fas fa-circle-notch fa-spin" style="font-size: 2.5rem;"></i>
         </div>
     </div>
 
@@ -186,21 +339,24 @@
             <div class="auth-card">
                 <div class="auth-left">
                     <h1>AMC BRIDGE</h1>
-                    <p>Welcome to the AMC Bridge learning platform. Login to access your course materials and videos.</p>
+                    <p>Welcome to the AMC Bridge learning platform.</p>
                 </div>
                 <div class="auth-right">
+                    <div style="margin-bottom: 30px;">
+                        <i class="fas fa-graduation-cap" style="font-size: 3rem; color: var(--primary-color);"></i>
+                    </div>
                     <h2>Welcome Back</h2>
+                    <p style="color: #6b7280; margin-bottom: 30px;">Sign in to continue learning</p>
                     <form id="loginForm">
-                        <div class="input-group"><label>Email Address</label><input type="email" id="loginEmail" required></div>
-                        <div class="input-group"><label>Password</label><input type="password" id="loginPassword" required><i class="fas fa-eye password-toggle"></i></div>
-                        <button type="submit" class="auth-btn">Sign In</button>
-                        <div class="form-footer" style="margin-top: 15px; display: flex; justify-content: space-between;">
-                            <div style="display:flex; gap:5px;"><input type="checkbox"> <span style="font-size:0.9rem;">Remember me</span></div>
-                            <a href="#" id="forgotPasswordLink" style="color:var(--primary-color); font-size:0.9rem; text-decoration:none;">Forgot Password?</a>
+                        <div class="input-group"><label>Email Address</label><input type="email" id="loginEmail" required placeholder="Enter your email"></div>
+                        <div class="input-group"><label>Password</label><input type="password" id="loginPassword" required placeholder="Enter your password"><i class="fas fa-eye password-toggle"></i></div>
+                        <div style="text-align: right; margin-bottom: 20px;">
+                             <a href="#" id="forgotPasswordLink" style="color:var(--primary-color); font-size:0.9rem; text-decoration:none; font-weight: 500;">Forgot Password?</a>
                         </div>
+                        <button type="submit" class="auth-btn">Sign In</button>
                     </form>
                     <p class="message" id="loginMessage" style="text-align:center; margin-top:15px; color:red; font-size:0.9rem;"></p>
-                    <div class="switch-text">New to AMC BRIDGE? <a href="#" class="showRegisterLink">Create Account</a></div>
+                    <div class="switch-text">Don't have an account? <a href="#" class="showRegisterLink">Create Account</a></div>
                 </div>
             </div>
         </div>
@@ -211,15 +367,15 @@
             <div class="auth-card">
                 <div class="auth-left">
                     <h1>Join Us</h1>
-                    <p>Create your AMC BRIDGE account today. Accounts require Admin Approval before access is granted.</p>
                 </div>
                 <div class="auth-right">
                     <h2>Create Account</h2>
+                    <p style="color: #6b7280; margin-bottom: 20px;">Join the community today</p>
                     <form id="registerForm">
-                        <div class="input-group"><label>Username</label><input type="text" id="registerUsername" required></div>
-                        <div class="input-group"><label>Email</label><input type="email" id="registerEmail" required></div>
-                        <div class="input-group"><label>Mobile</label><input type="tel" id="registerMobile" required></div>
-                        <div class="input-group"><label>Password</label><input type="password" id="registerPassword" required><i class="fas fa-eye password-toggle"></i></div>
+                        <div class="input-group"><label>Username</label><input type="text" id="registerUsername" required placeholder="John Doe"></div>
+                        <div class="input-group"><label>Email</label><input type="email" id="registerEmail" required placeholder="john@example.com"></div>
+                        <div class="input-group"><label>Mobile</label><input type="tel" id="registerMobile" required placeholder="07XXXXXXXX"></div>
+                        <div class="input-group"><label>Password</label><input type="password" id="registerPassword" required placeholder="Create password"><i class="fas fa-eye password-toggle"></i></div>
                         <button type="submit" class="auth-btn">Register</button>
                     </form>
                     <p class="message" id="registerMessage" style="text-align:center; margin-top:15px; font-size:0.9rem;"></p>
@@ -231,14 +387,18 @@
 
     <template id="videoTemplate">
         <div class="app-container">
+            <div class="mobile-header">
+                <div class="mobile-brand">
+                    <i class="fas fa-graduation-cap"></i> AMC BRIDGE
+                </div>
+                <div class="mobile-user"><i class="fas fa-user"></i></div>
+            </div>
+
             <aside class="sidebar-nav">
                 <div class="brand"><i class="fas fa-graduation-cap"></i> AMC BRIDGE</div>
                 <a href="#" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
-                <a href="#" class="nav-item"><i class="fas fa-book"></i> Materials</a>
+                <a href="pdfs.html" class="nav-item"><i class="fas fa-book"></i> Materials</a>
                 <a href="#" class="nav-item active"><i class="fas fa-play-circle"></i> Courses</a>
-                <div style="margin-top: auto;">
-                    <a href="#" class="nav-item"><i class="fas fa-cog"></i> Settings</a>
-                </div>
             </aside>
 
             <main class="main-content">
@@ -252,56 +412,70 @@
 
                 <div class="course-layout">
                     <div class="video-column">
-                        <div class="course-info">
-                            <h1><span id="current-video-title">Loading...</span> <span style="font-size:0.8rem; background:#f3f4f6; padding:4px 10px; border-radius:20px; color:#6b7280; font-weight:500; vertical-align:middle;">AMC</span></h1>
-                            <div class="course-meta">
-                                <span><i class="fas fa-video"></i> Video Lessons</span>
-                                <span><i class="fas fa-clock"></i> Self Paced</span>
-                                <span><i class="fas fa-star"></i> 5.0</span>
-                            </div>
-                        </div>
-
                         <div class="video-card">
                             <div id="player"></div>
                             <div class="click-blocker"></div>
                             <div id="video-watermark" class="full-coverage-watermark"></div>
-                            <div id="top-disclaimer" class="disclaimer-watermark">මෙම වීඩියෝව පිටපත් කිරීම, පටිගත කිරීම හෝ බෙදා හැරීම සපුරා තහනම්.</div>
-                            <div id="bottom-disclaimer" class="disclaimer-watermark">All rights reserved. Unauthorized copying will result in legal action.</div>
+                            <div id="top-disclaimer" class="disclaimer-watermark">Protected Content - Do Not Copy</div>
                             
                             <div class="custom-controls">
                                 <button id="custom-play-btn" class="control-btn"><i class="fas fa-play"></i></button>
                                 <span id="time-display" class="time-display">00:00 / 00:00</span>
                                 <input type="range" id="seek-bar" class="seek-bar" value="0" min="0" max="100" step="0.1">
                                 <select id="speed-select" class="speed-select">
-                                    <option value="0.5">0.5x</option>
-                                    <option value="1" selected>1.0x</option>
-                                    <option value="1.25">1.25x</option>
+                                    <option value="1" selected>1x</option>
                                     <option value="1.5">1.5x</option>
-                                    <option value="2">2.0x</option>
+                                    <option value="2">2x</option>
                                 </select>
                                 <button id="custom-fs-btn" class="control-btn"><i class="fas fa-expand"></i></button>
+                            </div>
+                        </div>
+                        
+                        <div class="course-info">
+                            <h1><span id="current-video-title">Loading...</span></h1>
+                            <div class="course-meta">
+                                <span><i class="fas fa-video"></i> Video Lessons</span>
                             </div>
                         </div>
                     </div>
 
                     <div class="playlist-column">
                         <div class="playlist-header">
-                            <h3>Course Content</h3>
+                            <h3>Course Syllabus</h3>
                         </div>
                         <ul id="videoPlaylist"></ul>
                     </div>
                 </div>
+
+                <nav class="bottom-nav">
+                    <a href="#" onclick="window.location.reload(); return false;" class="bottom-nav-item">
+                        <i class="fas fa-house"></i>
+                        <span>Home</span>
+                    </a>
+                    <a href="#" class="bottom-nav-item active">
+                        <i class="fas fa-layer-group"></i>
+                        <span>Courses</span>
+                    </a>
+                    <a href="pdfs.html" class="bottom-nav-item">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>Notes</span>
+                    </a>
+                    <a href="#" class="bottom-nav-item btn-logout" style="color:#ef4444;">
+                        <i class="fas fa-arrow-right-from-bracket"></i>
+                        <span>Exit</span>
+                    </a>
+                </nav>
             </main>
-            <div id="keyboard-disabled-toast" class="toast-message">Keyboard Disabled</div>
+            <div id="keyboard-disabled-toast" class="toast-message">Controls Disabled</div>
         </div>
     </template>
 
     <template id="popupTemplate">
-        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; justify-content: center; align-items: center;">
-            <div style="background: white; padding: 30px; border-radius: 12px; text-align: center; max-width: 400px;">
-                <h2 id="popupTitle" style="margin-bottom: 10px; font-size:1.2rem;"></h2>
-                <p id="popupMessage" style="margin-bottom: 20px; color: #666; font-size:0.9rem;"></p>
-                <button id="popupCloseBtn" style="background: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">OK</button>
+        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px;">
+            <div style="background: white; padding: 30px; border-radius: 20px; text-align: center; max-width: 400px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+                <h2 id="popupTitle" style="margin-bottom: 10px; font-size:1.3rem;"></h2>
+                <p id="popupMessage" style="margin-bottom: 25px; color: #666; font-size:1rem;"></p>
+                <button id="popupCloseBtn" style="background: var(--primary-color); color: white; border: none; padding: 12px 30px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 1rem; width: 100%;">OK</button>
             </div>
         </div>
     </template>
@@ -328,8 +502,6 @@
         const mainContainer = document.getElementById('mainContainer');
         const securityOverlay = document.getElementById('securityOverlay');
         const verifyBtn = document.getElementById('verifyBtn');
-        
-        // Registration Overlay Elements
         const regOverlay = document.getElementById('regOverlay');
         const regOkBtn = document.getElementById('regOkBtn');
 
@@ -338,17 +510,13 @@
         let updateTimer;
         let isDragging = false;
         let isLocked = false;
-        
-        // Flag to prevent Auth Listener interference during registration
         let isRegistrationProcess = false;
         
-        // --- NEW INACTIVITY TIMERS ---
-        const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 Minutes
-        const WARNING_DURATION = 60 * 1000;       // 1 Minute Warning
+        const INACTIVITY_TIMEOUT = 5 * 60 * 1000;
+        const WARNING_DURATION = 60 * 1000;
         let activityTimer;
         let warningCountdownTimer;
 
-        // --- HELPER: Extract Video ID from URL ---
         function extractVideoId(url) {
             if (!url) return null;
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -365,7 +533,6 @@
             return minutes + ":" + seconds;
         }
 
-        // --- SECURITY LOGIC ---
         function lockScreen() {
             if(isLocked || !auth.currentUser) return;
             isLocked = true;
@@ -400,7 +567,7 @@
         };
 
         const handleMouseLeave = () => {
-             if (mainContainer.classList.contains('video-view-container')) {
+             if (mainContainer.classList.contains('video-view-container') && window.innerWidth > 1024) {
                 lockScreen();
             }
         };
@@ -418,7 +585,6 @@
         }
 
         function handleLogout() {
-            // Remove inactivity popup if exists
             const existingPopup = document.getElementById('inactivity-popup');
             if (existingPopup) existingPopup.remove();
             clearTimeout(activityTimer);
@@ -430,18 +596,14 @@
             signOut(auth).catch(error => console.error(error));
         }
 
-        // --- NEW: INACTIVITY WARNING FUNCTION ---
         function showInactivityWarning() {
-            // 1. Pause Video
             if (player && typeof player.pauseVideo === 'function') {
                 player.pauseVideo();
             }
 
-            // 2. Remove existing popup if any
             const existingPopup = document.getElementById('inactivity-popup');
             if (existingPopup) existingPopup.remove();
 
-            // 3. Create Popup HTML
             const popupHTML = `
                 <div id="inactivity-popup" style="
                     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -449,20 +611,19 @@
                     display: flex; flex-direction: column; align-items: center; justify-content: center;
                     color: white; font-family: 'Inter', sans-serif; animation: fadeIn 0.3s;">
                     
-                    <div style="background: #1f2937; padding: 40px; border-radius: 20px; text-align: center; border: 1px solid #374151; max-width: 400px;">
+                    <div style="background: #1f2937; padding: 40px; border-radius: 20px; text-align: center; border: 1px solid #374151; max-width: 400px; width:90%;">
                         <i class="fas fa-bed" style="font-size: 4rem; color: #f59e0b; margin-bottom: 20px;"></i>
-                        <h2 style="margin-bottom: 10px; font-size: 1.5rem;">Are you still watching?</h2>
-                        <p style="color: #9ca3af; margin-bottom: 30px;">Video paused due to inactivity.</p>
+                        <h2 style="margin-bottom: 10px; font-size: 1.5rem;">Still watching?</h2>
+                        <p style="color: #9ca3af; margin-bottom: 30px;">Paused due to inactivity.</p>
                         
                         <button id="resume-btn" style="
                             background: #7c3aed; color: white; border: none; padding: 12px 30px;
-                            font-size: 1rem; font-weight: 600; border-radius: 10px; cursor: pointer;
-                            transition: 0.2s;">
-                            Yes, I'm Here
+                            font-size: 1rem; font-weight: 600; border-radius: 10px; cursor: pointer; width: 100%;">
+                            I'm Here
                         </button>
                         
                         <p style="margin-top: 20px; font-size: 0.8rem; color: #ef4444;">
-                            Auto logging out in <span id="auto-logout-timer">60</span>s
+                            Logging out in <span id="auto-logout-timer">60</span>s
                         </p>
                     </div>
                 </div>
@@ -470,7 +631,6 @@
 
             document.body.insertAdjacentHTML('beforeend', popupHTML);
 
-            // 4. Countdown Logic
             let secondsLeft = 60;
             const timerSpan = document.getElementById('auto-logout-timer');
             
@@ -480,14 +640,12 @@
                 if(secondsLeft <= 0) clearInterval(countdownInterval);
             }, 1000);
 
-            // 5. Force Logout Timeout
             warningCountdownTimer = setTimeout(() => {
                 clearInterval(countdownInterval);
                 document.getElementById('inactivity-popup')?.remove();
                 handleLogout();
             }, WARNING_DURATION);
 
-            // 6. Resume Button Logic
             document.getElementById('resume-btn').addEventListener('click', () => {
                 clearTimeout(warningCountdownTimer);
                 clearInterval(countdownInterval);
@@ -497,7 +655,6 @@
                     player.playVideo();
                 }
                 
-                // Restart Main Timer
                 if (auth.currentUser && mainContainer.classList.contains('video-view-container')) {
                     activityTimer = setTimeout(showInactivityWarning, INACTIVITY_TIMEOUT);
                 }
@@ -505,7 +662,6 @@
         }
 
         function resetActivityTimer() {
-            // IMPORTANT: If popup is already showing, ignore mouse moves (User MUST click button)
             if (document.getElementById('inactivity-popup')) return;
 
             clearTimeout(activityTimer);
@@ -517,7 +673,7 @@
         }
 
         function setupActivityListeners() {
-            ['mousemove', 'keydown', 'click', 'scroll'].forEach(evt => document.addEventListener(evt, resetActivityTimer));
+            ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => document.addEventListener(evt, resetActivityTimer));
             resetActivityTimer();
             document.addEventListener('visibilitychange', handleVisibilityChange);
             document.documentElement.addEventListener('mouseleave', handleMouseLeave);
@@ -525,18 +681,15 @@
 
         function removeActivityListeners() {
             clearTimeout(activityTimer);
-            ['mousemove', 'keydown', 'click', 'scroll'].forEach(evt => document.removeEventListener(evt, resetActivityTimer));
+            ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => document.removeEventListener(evt, resetActivityTimer));
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             document.documentElement.removeEventListener('mouseleave', handleMouseLeave);
         }
 
-        // --- GLOBAL AUTH LISTENER ---
         onAuthStateChanged(auth, async (user) => {
-            // IMPORTANT: If currently in the registration flow, ignore standard auth state changes
             if (isRegistrationProcess) return;
 
             if (user) {
-                // CHECK APPROVAL STATUS
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 if (userDoc.exists() && userDoc.data().isApproved === true) {
                     if (!mainContainer.classList.contains('video-view-container')) {
@@ -544,9 +697,7 @@
                     }
                     setupActivityListeners();
                 } else {
-                    // Force logout if not approved
                     await signOut(auth);
-                    // Do not show popup if we just registered (handled by flag), but for normal login attempt:
                     showView('login');
                 }
             } else {
@@ -608,7 +759,8 @@
                 mainContainer.querySelector('.showLoginLink').addEventListener('click', (e) => { e.preventDefault(); showView('login'); });
                 mainContainer.querySelector('#registerForm').addEventListener('submit', handleRegister);
             } else if (viewName === 'video') {
-                mainContainer.querySelector('.btn-logout').addEventListener('click', handleLogout);
+                const logoutBtns = mainContainer.querySelectorAll('.btn-logout');
+                logoutBtns.forEach(btn => btn.addEventListener('click', handleLogout));
                 
                 const playBtn = document.getElementById('custom-play-btn');
                 const seekBar = document.getElementById('seek-bar');
@@ -667,7 +819,6 @@
                 await setPersistence(auth, browserLocalPersistence);
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 
-                // Explicit Check for approval
                 const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
                 if (!userDoc.exists() || userDoc.data().isApproved !== true) {
                      await signOut(auth);
@@ -676,15 +827,14 @@
 
             } catch (error) {
                 if(error.message === "Account under review.") {
-                    messageEl.textContent = "Your account is still under review by an admin.";
+                    messageEl.textContent = "Your account is awaiting admin approval.";
                 } else {
-                    messageEl.textContent = 'Invalid email or password.';
+                    messageEl.textContent = 'Invalid credentials.';
                 }
                 submitBtn.disabled = false;
             }
         }
 
-        // --- NEW REGISTRATION LOGIC (FIXED) ---
         async function handleRegister(e) {
             e.preventDefault();
             const username = mainContainer.querySelector('#registerUsername').value;
@@ -696,16 +846,12 @@
             submitBtn.disabled = true;
 
             try {
-                // 1. Set Flag to ignore auth state changes during this process
                 isRegistrationProcess = true;
-
-                // 2. Show Loading Overlay
                 regOverlay.classList.add('active');
                 document.getElementById('regLoading').style.display = 'flex';
                 document.getElementById('regSuccess').style.display = 'none';
                 document.getElementById('regReview').style.display = 'none';
 
-                // 3. Create User
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 await setDoc(doc(db, "users", userCredential.user.uid), { 
                     username, email, mobile, 
@@ -714,15 +860,11 @@
                     isAdmin: false 
                 });
                 
-                // 4. Sign Out immediately (Auth listener will ignore this due to flag)
                 await signOut(auth);
                 
-                // 5. Show Success Tick (Delay 1.5s)
                 setTimeout(() => {
                     document.getElementById('regLoading').style.display = 'none';
                     document.getElementById('regSuccess').style.display = 'flex';
-
-                    // 6. Show Admin Review Msg (Delay 2s)
                     setTimeout(() => {
                         document.getElementById('regSuccess').style.display = 'none';
                         document.getElementById('regReview').style.display = 'flex';
@@ -737,13 +879,9 @@
             }
         }
 
-        // OK Button Logic
         regOkBtn.addEventListener('click', async () => {
-            // Reset UI
             regOverlay.classList.remove('active');
             isRegistrationProcess = false;
-            
-            // Ensure logged out and go to login view
             await signOut(auth);
             showView('login');
         });
@@ -757,7 +895,7 @@
             const userDocSnap = await getDoc(userDocRef);
             if (userDocSnap.exists()) {
                 const { username, mobile } = userDocSnap.data();
-                const details = `${username} / ${currentUser.email} / ${mobile}`;
+                const details = `${username} / ${mobile}`;
                 let html = '';
                 for (let i = 0; i < 200; i++) { html += `<span class="watermark-item">${details}</span>`; }
                 watermarkContainer.innerHTML = html;
@@ -843,7 +981,7 @@
                 const listItem = document.createElement('li');
                 listItem.innerHTML = `
                     <div class="play-icon-wrapper"><i class="fas fa-play"></i></div>
-                    <div class="video-details"><strong>${video.title}</strong><span>${video.description || 'No description'}</span></div>
+                    <div class="video-details"><strong>${video.title}</strong><span>${video.description || 'Watch now'}</span></div>
                 `;
                 listItem.addEventListener('click', () => {
                     const videoId = extractVideoId(video.id);
