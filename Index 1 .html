@@ -222,6 +222,7 @@
                 <li><button class="nav-btn" onclick="switchTab('content')"><i class="fas fa-upload"></i> Upload Content</button></li>
                 <li><button class="nav-btn" onclick="switchTab('manage-videos')"><i class="fas fa-video"></i> Manage Videos</button></li>
                 <li><button class="nav-btn" onclick="switchTab('manage-pdfs')"><i class="fas fa-file-pdf"></i> Manage PDFs</button></li>
+                <li><button class="nav-btn" onclick="switchTab('categories')"><i class="fas fa-tags"></i> Categories</button></li>
             </ul>
             <div style="margin-top: auto;">
                 <button id="changePasswordBtn" class="nav-btn"><i class="fas fa-key"></i> Change Pass</button>
@@ -302,7 +303,11 @@
                             <input type="text" id="pdfTitle" class="input-field" placeholder="PDF Title" required>
                             <input type="file" id="pdfFile" class="input-field" accept=".pdf" required>
                         </div>
-                        <button type="submit" id="uploadPdfBtn" class="submit-btn">Upload PDF</button>
+                        <select id="pdfCategory" class="input-field" required>
+                            <option value="" disabled selected>-- Select Category --</option>
+                        </select>
+                        <button type="submit" id="uploadPdfBtn" class="submit-btn"><i class="fas fa-upload"></i> Upload PDF</button>
+                        <p id="uploadStatus" class="message" style="margin-top:10px;"></p>
                     </form>
                 </div>
             </div>
@@ -320,25 +325,40 @@
             <div id="tab-manage-pdfs" class="content-section">
                 <div class="card">
                     <h3>Manage PDFs</h3>
+                    <div class="filter-bar">
+                        <input type="text" id="pdfSearch" class="search-input" placeholder="Search PDFs...">
+                        <select id="pdfCategoryFilter" class="filter-select">
+                            <option value="all">All Categories</option>
+                        </select>
+                    </div>
                     <table>
-                        <thead><tr><th>Title</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Title</th><th>Category</th><th>Actions</th></tr></thead>
                         <tbody id="pdf-table-body"></tbody>
                     </table>
                 </div>
             </div>
 
+            <div id="tab-categories" class="content-section">
+                <div class="card">
+                    <h3><i class="fas fa-plus-circle"></i> Add New Category</h3>
+                    <div style="display:flex; gap:15px; align-items:flex-start; flex-wrap:wrap;">
+                        <input type="text" id="newCategoryName" class="input-field" placeholder="Category name (e.g. Anatomy)" style="flex:1; min-width:200px; margin-bottom:0;">
+                        <button id="addCategoryBtn" class="submit-btn" style="white-space:nowrap;"><i class="fas fa-plus"></i> Add Category</button>
+                    </div>
+                    <p id="categoryMsg" class="message" style="margin-top:10px;"></p>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-list"></i> All Categories</h3>
+                    <p style="color:#64748b; font-size:0.9rem; margin-bottom:15px;"><i class="fas fa-info-circle"></i> Note: If you delete a category, the PDFs inside it will <b>not</b> be deleted — they will appear as "Uncategorized".</p>
+                    <div id="categories-list" style="display:flex; flex-direction:column; gap:10px;">
+                        <div style="text-align:center; color:#aaa; padding:20px;">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
-
-    <div id="customAlertModal" class="custom-modal-overlay">
-        <div class="custom-modal">
-            <i class="fas fa-info-circle modal-icon" id="alertIcon" style="color:var(--primary-color);"></i>
-            <h3 class="modal-title" id="alertTitle">Alert</h3>
-            <p class="modal-msg" id="alertMessage">Something happened.</p>
-            <div class="modal-actions">
-                <button class="modal-btn btn-confirm-primary" onclick="closeCustomAlert()">OK</button>
-            </div>
-        </div>
+      
     </div>
 
     <div id="customConfirmModal" class="custom-modal-overlay">
@@ -352,6 +372,17 @@
             </div>
         </div>
     </div>
+
+    <div id="customAlertModal" class="custom-modal-overlay">
+    <div class="custom-modal">
+        <i id="alertIcon" class="fas fa-check-circle modal-icon"></i>
+        <h3 class="modal-title" id="alertTitle">Success</h3>
+        <p class="modal-msg" id="alertMessage">Action completed successfully.</p>
+        <div class="modal-actions">
+            <button class="modal-btn btn-confirm-primary" onclick="closeCustomAlert()">OK</button>
+        </div>
+    </div>
+</div>
 
     <template id="passwordChangeTemplate">
         </template>
@@ -440,7 +471,8 @@
                 'users': 'User Management', 
                 'content': 'Upload Content', 
                 'manage-videos': 'Manage Videos',
-                'manage-pdfs': 'Manage PDFs' 
+                'manage-pdfs': 'Manage PDFs',
+                'categories': 'Manage Categories'
             };
             document.getElementById('pageTitle').innerText = titles[tabName];
         };
@@ -451,14 +483,24 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (userDoc.exists() && userDoc.data().isAdmin === true) {
-                    loginView.style.display = 'none';
-                    dashboardView.classList.remove('hidden');
-                    loadAllData();
-                } else {
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists() && userDoc.data().isAdmin === true) {
+                        loginView.style.display = 'none';
+                        dashboardView.classList.remove('hidden');
+                        loadAllData();
+                    } else {
+                        // Not an admin — silently sign out and show login
+                        await signOut(auth);
+                        loginView.style.display = 'flex';
+                        dashboardView.classList.add('hidden');
+                        document.getElementById('loginError').textContent = "Access denied. Admin only.";
+                    }
+                } catch(e) {
+                    // Network or Firestore error — just show login quietly
                     await signOut(auth);
-                    showCustomAlert("Access Denied", "You are not an authorized admin.", false);
+                    loginView.style.display = 'flex';
+                    dashboardView.classList.add('hidden');
                 }
             } else {
                 loginView.style.display = 'flex';
@@ -482,7 +524,7 @@
 
         function loadAllData() {
             loadUsers();
-            // Only load tables if they exist in current DOM (Safety)
+            loadCategories();
             if (document.getElementById('video-table-body')) loadVideos();
             if (document.getElementById('pdf-table-body')) loadPdfs();
         }
@@ -568,6 +610,8 @@
         // --- GLOBAL ACTIONS (WITH CUSTOM MODALS) ---
         document.body.addEventListener('click', async (e) => {
             const target = e.target;
+            // Skip if it's a category delete button (handled separately)
+            if (target.closest('.delete-category-btn')) return;
 
             // Approve
             if (target.classList.contains('approve-user-btn')) {
@@ -649,6 +693,111 @@
             }, false);
         });
 
+        // --- CATEGORY MANAGEMENT ---
+        let allCategories = []; // { id, name, order }
+
+        async function loadCategories() {
+            try {
+                const q = query(collection(db, 'categories'), orderBy('order', 'asc'));
+                const snap = await getDocs(q);
+                allCategories = [];
+                snap.forEach(d => allCategories.push({ id: d.id, ...d.data() }));
+            } catch(e) {
+                allCategories = []; // Firestore collection doesn't exist yet — silently ignore
+            }
+            renderCategoryList();
+            populateCategoryDropdowns();
+        }
+
+        function renderCategoryList() {
+            const listEl = document.getElementById('categories-list');
+            if (!listEl) return;
+            listEl.innerHTML = '';
+            if (allCategories.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">No categories yet. Add one above!</div>';
+                return;
+            }
+            allCategories.forEach(cat => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 16px;';
+                row.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <i class="fas fa-tag" style="color:#7c3aed;"></i>
+                        <span style="font-weight:600; color:#1e293b;">${cat.name}</span>
+                    </div>
+                    <button class="action-btn btn-delete delete-category-btn" data-id="${cat.id}" data-name="${cat.name}">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                `;
+                listEl.appendChild(row);
+            });
+        }
+
+        function populateCategoryDropdowns() {
+            // Upload form dropdown
+            const uploadSelect = document.getElementById('pdfCategory');
+            if (uploadSelect) {
+                uploadSelect.innerHTML = '<option value="" disabled selected>-- Select Category --</option>';
+                allCategories.forEach(cat => {
+                    uploadSelect.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
+                });
+            }
+            // Manage PDFs filter dropdown
+            const filterSelect = document.getElementById('pdfCategoryFilter');
+            if (filterSelect) {
+                filterSelect.innerHTML = '<option value="all">All Categories</option>';
+                allCategories.forEach(cat => {
+                    filterSelect.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
+                });
+            }
+        }
+
+        document.getElementById('addCategoryBtn').addEventListener('click', async () => {
+            const nameInput = document.getElementById('newCategoryName');
+            const msgEl = document.getElementById('categoryMsg');
+            const name = nameInput.value.trim();
+            if (!name) { msgEl.textContent = 'Please enter a category name.'; msgEl.style.color = 'red'; return; }
+            // Check duplicate
+            if (allCategories.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+                msgEl.textContent = 'This category already exists!'; msgEl.style.color = 'red'; return;
+            }
+            try {
+                const btn = document.getElementById('addCategoryBtn');
+                btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+                await addDoc(collection(db, 'categories'), { name, order: allCategories.length, createdAt: serverTimestamp() });
+                nameInput.value = '';
+                msgEl.textContent = `✅ "${name}" category added!`; msgEl.style.color = 'green';
+                await loadCategories();
+                btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus"></i> Add Category';
+                setTimeout(() => { msgEl.textContent = ''; }, 3000);
+            } catch(err) { 
+                document.getElementById('categoryMsg').textContent = err.message; 
+                document.getElementById('addCategoryBtn').disabled = false;
+                document.getElementById('addCategoryBtn').innerHTML = '<i class="fas fa-plus"></i> Add Category';
+            }
+        });
+
+        // Allow Enter key on category input
+        document.getElementById('newCategoryName').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('addCategoryBtn').click();
+        });
+
+        // Delete category via event delegation (separate from other delete handlers)
+        document.addEventListener('click', async (e) => {
+            const catBtn = e.target.closest('.delete-category-btn');
+            if (!catBtn) return;
+            e.stopPropagation();
+            const id = catBtn.dataset.id;
+            const name = catBtn.dataset.name;
+            showCustomConfirm(`Delete "${name}"?`, `PDFs in this category won't be deleted, but they'll show as Uncategorized.`, async () => {
+                try {
+                    await deleteDoc(doc(db, 'categories', id));
+                    await loadCategories();
+                    showCustomAlert('Deleted', `Category "${name}" removed.`);
+                } catch(err) { showCustomAlert('Error', err.message, false); }
+            });
+        });
+
         // --- DATA LOADING ---
         async function loadVideos() {
             const tbody = document.getElementById('video-table-body');
@@ -672,11 +821,91 @@
             const snap = await getDocs(q);
             if(document.getElementById('countPdfs')) document.getElementById('countPdfs').innerText = snap.size;
             tbody.innerHTML = '';
-            snap.forEach(doc => {
-                const d = doc.data();
+            
+            let allPdfs = [];
+            snap.forEach(doc => allPdfs.push({ id: doc.id, ...doc.data() }));
+            window._allPdfs = allPdfs;
+            renderPdfTable(allPdfs);
+            
+            // Filter listeners
+            const searchEl = document.getElementById('pdfSearch');
+            const filterEl = document.getElementById('pdfCategoryFilter');
+            const filterFn = () => {
+                const s = searchEl.value.toLowerCase();
+                const c = filterEl.value;
+                renderPdfTable(window._allPdfs.filter(p => 
+                    (c === 'all' || p.category === c) &&
+                    p.title.toLowerCase().includes(s)
+                ));
+            };
+            if(searchEl) { searchEl.oninput = filterFn; }
+            if(filterEl) { filterEl.onchange = filterFn; }
+        }
+        
+        function renderPdfTable(pdfs) {
+            const tbody = document.getElementById('pdf-table-body');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            pdfs.forEach(d => {
+                const currentCat = d.category || '';
+                
+                // Build category options from allCategories
+                let options = `<option value="">-- Uncategorized --</option>`;
+                allCategories.forEach(cat => {
+                    const selected = cat.name === currentCat ? 'selected' : '';
+                    options += `<option value="${cat.name}" ${selected}>${cat.name}</option>`;
+                });
+
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${d.title}</td><td><button class="action-btn btn-delete delete-content-btn" data-id="${doc.id}" data-type="pdfs">Delete</button></td>`;
+                tr.dataset.id = d.id;
+                tr.innerHTML = `
+                    <td>${d.title}</td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <select class="pdf-cat-select" data-id="${d.id}" style="padding:5px 8px; border:1px solid #e2e8f0; border-radius:6px; font-size:0.85rem; color:#374151; background:white; outline:none; cursor:pointer;">
+                                ${options}
+                            </select>
+                            <button class="action-btn save-cat-btn" data-id="${d.id}" style="background:#d1fae5; color:#065f46; display:none;">
+                                <i class="fas fa-check"></i> Save
+                            </button>
+                        </div>
+                    </td>
+                    <td><button class="action-btn btn-delete delete-content-btn" data-id="${d.id}" data-type="pdfs"><i class="fas fa-trash"></i> Delete</button></td>
+                `;
                 tbody.appendChild(tr);
+            });
+
+            // Show Save button when dropdown changes
+            tbody.querySelectorAll('.pdf-cat-select').forEach(sel => {
+                sel.addEventListener('change', () => {
+                    const saveBtn = sel.parentElement.querySelector('.save-cat-btn');
+                    saveBtn.style.display = 'inline-block';
+                });
+            });
+
+            // Save category on click
+            tbody.querySelectorAll('.save-cat-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.dataset.id;
+                    const sel = btn.parentElement.querySelector('.pdf-cat-select');
+                    const newCat = sel.value;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    btn.disabled = true;
+                    try {
+                        await updateDoc(doc(db, 'pdfs', id), { category: newCat || null });
+                        btn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+                        btn.style.background = '#a7f3d0';
+                        // Update local data
+                        const pdf = window._allPdfs.find(p => p.id === id);
+                        if (pdf) pdf.category = newCat || null;
+                        setTimeout(() => { btn.style.display = 'none'; btn.innerHTML = '<i class="fas fa-check"></i> Save'; btn.disabled = false; }, 1500);
+                    } catch(err) {
+                        btn.innerHTML = '❌ Error';
+                        btn.style.background = '#fee2e2';
+                        btn.disabled = false;
+                        setTimeout(() => { btn.style.display = 'none'; btn.innerHTML = '<i class="fas fa-check"></i> Save'; }, 2000);
+                    }
+                });
             });
         }
 
@@ -707,21 +936,32 @@
             e.preventDefault();
             const file = document.getElementById('pdfFile').files[0];
             const title = document.getElementById('pdfTitle').value;
+            const category = document.getElementById('pdfCategory').value;
+            const statusEl = document.getElementById('uploadStatus');
+            const btn = document.getElementById('uploadPdfBtn');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            statusEl.textContent = 'Reading file...';
+            statusEl.style.color = '#6b7280';
             
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = async (event) => {
                 try {
+                    statusEl.textContent = 'Uploading to server...';
                     const payload = { file: event.target.result, type: file.type, name: file.name };
                     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
                     const data = await res.json();
                     if (data.status === 'success') {
-                        await addDoc(collection(db, "pdfs"), { title, url: data.url, fileId: data.fileId, createdAt: serverTimestamp() });
-                        showCustomAlert("Success", "PDF Uploaded!");
+                        await addDoc(collection(db, "pdfs"), { title, category, url: data.url, fileId: data.fileId, createdAt: serverTimestamp() });
+                        showCustomAlert("Success", `"${title}" uploaded under "${category}"!`);
                         document.getElementById('uploadPdfForm').reset();
+                        statusEl.textContent = '';
                         loadPdfs();
                     } else { throw new Error(data.message); }
-                } catch (err) { showCustomAlert("Error", err.message, false); }
+                } catch (err) { showCustomAlert("Error", err.message, false); statusEl.textContent = ''; }
+                finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-upload"></i> Upload PDF'; }
             };
         });
     </script>
