@@ -263,15 +263,7 @@
     </div>
 
     <script>
-        // ── PC Detection: Redirect desktop browsers to web app ──
-        (function() {
-            var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            if (!isMobile) {
-                // PC browser detected — redirect to the Next.js web app
-                window.location.href = 'https://amc-next-pi.vercel.app';
-                return;
-            }
-        })();
+        // PC Detection redirect removed to allow all devices to see the download window
 
         async function fetchLatestReleaseUrls() {
             const btnWin = document.getElementById('btn-win');
