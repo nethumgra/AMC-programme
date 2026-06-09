@@ -655,9 +655,9 @@
 
         /* Footer */
         .site-footer {
-            background-color: var(--btn-gray);
-            padding: 80px 60px 40px;
-            margin-top: 80px;
+            background-color: #ffffff;
+            padding: 80px 40px 40px;
+            margin-top: auto;
         }
 
         .footer-grid {
@@ -852,8 +852,22 @@
             cursor: default;
         }
 
+        .mobile-description-container {
+            display: none;
+        }
+
         @media (max-width: 768px) {
             #rocket-path-visible {
+                display: none !important;
+            }
+            
+            .pc-description {
+                display: none !important;
+            }
+            .mobile-description-container {
+                display: block !important;
+            }
+            #about-cards-container {
                 display: none !important;
             }
         }
@@ -916,18 +930,29 @@
     </section>
 
     <!-- About Us Section -->
-    <div id="about" class="page-wrapper" style="border-bottom: 1px solid var(--border-color); padding-bottom: 80px;">
+    <div id="about" class="page-wrapper" style="padding-bottom: 80px;">
         <div class="header-section reveal">
             <div class="header-title">
                 <h1>About AMC Bridge<br>Empowering Learning</h1>
             </div>
-            <div style="max-width: 600px; font-size: 1.05rem; line-height: 1.7; color: var(--text-muted); margin-top: 15px;">
+            <div class="pc-description" style="max-width: 600px; font-size: 1.05rem; line-height: 1.7; color: var(--text-muted); margin-top: 15px;">
                 <p style="margin-bottom: 10px;">At <strong>AMC BRIDGE</strong>, our mission is simple: <em>"The last place you come to pass AMC Part 1."</em></p>
                 <p>We don't just provide lectures—we provide a complete, personalized roadmap to your success. From structured learning and continuous assessment to mentorship and career support, everything is designed to maximize your chances of passing the AMC Part 1 examination.</p>
             </div>
+            <!-- Mobile specific short description with tick marks -->
+            <div class="mobile-description-container" style="max-width: 600px; font-size: 1.1rem; line-height: 1.7; color: var(--text-muted); margin-top: 20px; text-align: left;">
+                <p style="margin-bottom: 10px; font-size: 1.1rem; color: var(--text-color);">At <strong>AMC BRIDGE</strong>, our mission is simple: <em>"The last place you come to pass AMC Part 1."</em></p>
+                <p style="margin-bottom: 20px; font-size: 1rem; color: var(--text-muted); line-height: 1.6;">We don't just provide lectures—we provide a complete, personalized roadmap to your success. From structured learning and continuous assessment to mentorship and career support, everything is designed to maximize your chances of passing the AMC Part 1 examination.</p>
+                <ul style="list-style-type: none; padding: 0; margin: 0; font-size: 1.05rem;">
+                    <li style="margin-bottom: 12px;"><i class="fas fa-check-circle" style="color: #4285f4; margin-right: 10px;"></i> Personalized Mentorship</li>
+                    <li style="margin-bottom: 12px;"><i class="fas fa-check-circle" style="color: #4285f4; margin-right: 10px;"></i> Comprehensive Resources</li>
+                    <li style="margin-bottom: 12px;"><i class="fas fa-check-circle" style="color: #4285f4; margin-right: 10px;"></i> Regular Assessments</li>
+                    <li style="margin-bottom: 12px;"><i class="fas fa-check-circle" style="color: #4285f4; margin-right: 10px;"></i> Career Support & Guidance</li>
+                </ul>
+            </div>
         </div>
 
-        <div class="grid-container" style="margin-top: 40px;">
+        <div id="about-cards-container" class="grid-container" style="margin-top: 40px;">
             <!-- Card 1: Vision -->
             <div class="platform-card reveal">
                 <div class="platform-title">
@@ -1022,7 +1047,7 @@
         <!-- Header -->
         <div class="header-section reveal">
             <div class="header-title">
-                <h1>Download AMC Bridge<br>into your device</h1>
+                <h1>Download AMC Bridge<br>Into Your Device</h1>
             </div>
             <a href="https://github.com/nethumgra/AMC-programme/releases" target="_blank" class="btn-secondary">View
                 previous releases</a>
@@ -1581,111 +1606,4 @@
         fetchLatestReleaseUrls();
     </script>
 </body>
-
-</html> options: [
-"Acute myocardial infarction",
-"Pulmonary embolism",
-"Aortic dissection",
-"Pericarditis",
-"Esophageal rupture"
-],
-answer: 2
-},
-{
-q: "Which of the following is the most common cause of community-acquired pneumonia in adults?",
-options: [
-"Haemophilus influenzae",
-"Streptococcus pneumoniae",
-"Mycoplasma pneumoniae",
-"Staphylococcus aureus",
-"Legionella pneumophila"
-],
-answer: 1
-},
-{
-q: "A 25-year-old female complains of frequent urination and burning sensation. Urine culture shows >10^5 CFU/mL of E.
-coli. What is the first-line treatment?",
-options: [
-"Ciprofloxacin",
-"Amoxicillin",
-"Nitrofurantoin",
-"Azithromycin",
-"Ceftriaxone"
-],
-answer: 2
-}
-];
-
-let currentQ = 0;
-
-function renderQuestion() {
-const qData = mcqQuestions[currentQ];
-const qNumEl = document.getElementById('q-num');
-if(qNumEl) qNumEl.textContent = currentQ + 1;
-
-const qTextEl = document.getElementById('question-text');
-if(qTextEl) qTextEl.textContent = qData.q;
-
-const optsContainer = document.getElementById('options-container');
-if(optsContainer) {
-optsContainer.innerHTML = '';
-
-qData.options.forEach((opt, idx) => {
-const btn = document.createElement('button');
-btn.className = 'mcq-option';
-btn.innerHTML = `<span class="opt-letter">${String.fromCharCode(65 + idx)}</span> <span class="opt-text">${opt}</span>`;
-btn.onclick = () => handleAnswer(idx, btn);
-optsContainer.appendChild(btn);
-});
-}
-
-if(document.getElementById('mcq-container')) {
-gsap.fromTo('#mcq-container', { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.5 });
-}
-}
-
-function handleAnswer(idx, btnEl) {
-const btns = document.querySelectorAll('.mcq-option');
-btns.forEach(b => b.disabled = true);
-
-const correctIdx = mcqQuestions[currentQ].answer;
-
-if (idx === correctIdx) {
-btnEl.classList.add('correct');
-btnEl.innerHTML += ' <i class="fas fa-check-circle" style="margin-left: auto; font-size: 1.2rem;"></i>';
-} else {
-btnEl.classList.add('wrong');
-btnEl.innerHTML += ' <i class="fas fa-times-circle" style="margin-left: auto; font-size: 1.2rem;"></i>';
-// highlight correct
-btns[correctIdx].classList.add('correct');
-btns[correctIdx].innerHTML += ' <i class="fas fa-check-circle" style="margin-left: auto; font-size: 1.2rem;"></i>';
-}
-
-setTimeout(() => {
-currentQ++;
-if (currentQ < mcqQuestions.length) { gsap.to('#mcq-container', { opacity: 0, x: -20, duration: 0.3, onComplete:
-    renderQuestion }); } else { document.getElementById('mcq-container').innerHTML=` <div
-    style="text-align: center; padding: 40px 0;">
-    <i class="fas fa-trophy" style="font-size: 4rem; color: #fbbc05; margin-bottom: 20px;"></i>
-    <h3 style="font-size: 1.5rem; color: white;">Practice Completed!</h3>
-    <p style="color: #94a3b8; margin-top: 10px;">You've finished the sample questions.</p>
-    <button class="btn-primary"
-        style="margin-top: 30px; background: #4285f4; color: white; padding: 12px 30px; border-radius: 9999px; border: none; cursor: pointer; transition: all 0.2s;"
-        onclick="currentQ=0; renderQuestion();">Restart Practice</button>
-    </div>
-    `;
-    gsap.fromTo('#mcq-container', { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.5 });
-    }
-    }, 1500);
-    }
-
-    // Initialize MCQ
-    if(document.getElementById('mcq-container')) {
-    renderQuestion();
-    }
-
-    fetchLatestReleaseUrls();
-    </script>
-    </body>
-
-    </html>
+</html>
