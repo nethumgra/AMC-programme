@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ffffff">
+    <title>Checking Device | AMC Bridge</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-light: #ffffff;
+            --text-main: #202124;
+            --text-muted: #5f6368;
+            --btn-black: #202124;
+            --btn-black-hover: #000000;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f8f9fa;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .logo i {
+            color: #4285f4;
+            font-size: 1.8rem;
+        }
+
+        /* Loading State */
+        #loading {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e8eaed;
+            border-top: 4px solid #4285f4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .sub-text {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        /* Warning State */
+        #warning {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .warning-icon {
+            font-size: 3.5rem;
+            color: #ea4335;
+            margin-bottom: 20px;
+        }
+
+        .warning-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-main);
+        }
+
+        .warning-desc {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .btn-primary {
+            background: var(--btn-black);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 9999px;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            background: var(--btn-black-hover);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo">
+            <i class="fas fa-layer-group"></i> AMC Bridge
+        </div>
+
+        <div id="loading">
+            <div class="spinner"></div>
+            <div class="status-text">Checking device compatibility...</div>
+            <div class="sub-text">Please wait a moment</div>
+        </div>
+
+        <div id="warning">
+            <i class="fas fa-exclamation-circle warning-icon"></i>
+            <div class="warning-title">Access Restricted</div>
+            <div class="warning-desc">
+                The Web App is optimized exclusively for Apple devices (macOS & iOS). For the best experience, security, and performance, Windows and Android users must use our dedicated native applications.
+            </div>
+            <a href="index.html#download" class="btn-primary">
+                Download Native App <i class="fas fa-download"></i>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        setTimeout(() => {
+            const ua = navigator.userAgent || navigator.vendor || window.opera || '';
+            const platform = navigator.platform || '';
+            const isMac = ua.includes('Macintosh') || platform.toUpperCase().includes('MAC');
+            
+            // Check for iPhone, iPod, iPad (including iPadOS on newer iPads requesting desktop site)
+            const isIOS = /iPad|iPhone|iPod/.test(ua) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+            if (isMac || isIOS) {
+                // Device is authorized, redirect to Web App
+                window.location.replace("https://amc-next-pi.vercel.app");
+            } else {
+                // Show restriction warning
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('warning').style.display = 'block';
+            }
+        }, 1500); // 1.5 second delay for UX
+    </script>
+</body>
+</html>
