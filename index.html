@@ -1417,9 +1417,15 @@
         // Start typing shortly after load
         setTimeout(typeWriter, 500);
 
-        // Mac OS Detection and Redirect (Strictly Mac computers only)
-        if (navigator.userAgent.includes('Macintosh')) {
-            window.location.href = 'check.html';
+        // Mac OS and iOS Detection for Auto-Redirect
+        const ua = navigator.userAgent || navigator.vendor || window.opera || '';
+        const platform = navigator.platform || '';
+        const isMac = ua.includes('Macintosh') || platform.toUpperCase().includes('MAC');
+        const isIOS = /iPad|iPhone|iPod/.test(ua) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        if (isMac || isIOS) {
+            // Bypass check.html and redirect directly to web app
+            window.location.href = 'https://amc-next-pi.vercel.app';
         }
 
         // GSAP Scroll Rocket Animation with Pinned Section & MotionPath
